@@ -21,21 +21,14 @@ jobs:
         with:
           persist-credentials: false
       
-      # Extract Python version from hatch matrix configuration
-      - name: Get Python version from pyproject.toml
-        id: python-version
-        run: |
-          python_version=$(python -c "import tomllib; f=open('pyproject.toml','rb'); data=tomllib.load(f); print(data['tool']['hatch']['envs']['all']['matrix']['python'][0])")
-          echo "version=$python_version" >> $GITHUB_OUTPUT
-      
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ steps.python-version.outputs.version }}
+          python-version: '3.12'
           cache: 'pip'
       
       # Install hatch for environment management
-      - name: Install hatch
-        run: pip install hatch
+      - name: Install Hatch
+        uses: pypa/hatch@install
       
       # Run code quality checks using hatch
       - name: Run linting and formatting checks

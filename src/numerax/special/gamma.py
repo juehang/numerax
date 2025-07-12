@@ -1,9 +1,9 @@
-import functools
-
 import jax
 import jax.numpy as jnp
 import jax.scipy.special as special
 from jaxtyping import ArrayLike
+
+from ..utils import preserve_metadata
 
 # Global constants for numerical stability - adapt to JAX precision setting
 _DTYPE = jnp.float64 if jax.config.jax_enable_x64 else jnp.float32
@@ -11,7 +11,7 @@ TINY = jnp.finfo(_DTYPE).smallest_normal  # For preventing underflow
 EPS = jnp.finfo(_DTYPE).eps  # For convergence tolerance (machine epsilon)
 
 
-@jax.custom_jvp
+@preserve_metadata(jax.custom_jvp)
 def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
     r"""
     Inverse of the regularized incomplete gamma function.
@@ -217,7 +217,3 @@ def gammap_inverse_jvp(primals, tangents):
     x_dot = dx_dp * p_dot
 
     return x, x_dot
-
-
-# Fix documentation by copying metadata from original function
-functools.update_wrapper(gammap_inverse, gammap_inverse.fun)

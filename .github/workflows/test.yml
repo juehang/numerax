@@ -21,11 +21,11 @@ jobs:
         with:
           persist-credentials: false
       
-      # Extract Python version from pyproject.toml
+      # Extract Python version from hatch matrix configuration
       - name: Get Python version from pyproject.toml
         id: python-version
         run: |
-          python_version=$(grep -E "requires-python.*=" pyproject.toml | sed -E 's/.*">=([0-9.]+)".*/\1/')
+          python_version=$(python -c "import tomllib; f=open('pyproject.toml','rb'); data=tomllib.load(f); print(data['tool']['hatch']['envs']['all']['matrix']['python'][0])")
           echo "version=$python_version" >> $GITHUB_OUTPUT
       
       - uses: actions/setup-python@v5
@@ -33,17 +33,14 @@ jobs:
           python-version: ${{ steps.python-version.outputs.version }}
           cache: 'pip'
       
-      # Install the package with all dependencies
-      - name: Install dependencies
-        run: pip install -e .
+      # Install hatch for environment management
+      - name: Install hatch
+        run: pip install hatch
       
-      # Run code quality checks
-      - name: Lint with ruff
-        run: ruff check .
+      # Run code quality checks using hatch
+      - name: Run linting and formatting checks
+        run: hatch run lint:check
       
-      - name: Check formatting with ruff
-        run: ruff format --check --diff .
-      
-      # Run tests
-      - name: Run tests with pytest
-        run: pytest tests/ -v
+      # Run tests using hatch
+      - name: Run tests
+        run: hatch run test

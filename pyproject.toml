@@ -23,6 +23,7 @@ classifiers = [
 ]
 dependencies = [
   "jax",
+  "jaxtyping",
   "optax",
   "pdoc"
 ]

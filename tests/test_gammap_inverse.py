@@ -1,5 +1,5 @@
 """
-Test suite for bijections module.
+Test suite for gamma special functions.
 """
 
 import jax

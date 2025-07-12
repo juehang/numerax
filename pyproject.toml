@@ -39,6 +39,7 @@ path = "src/numerax/__init__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
+  "ruff"
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"

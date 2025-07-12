@@ -1,0 +1,128 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "numerax"
+dynamic = ["version"]
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Juehang Qin"},
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+  "jax",
+  "optax",
+]
+
+[project.urls]
+Documentation = "https://github.com/juehang/numerax#readme"
+Issues = "https://github.com/juehang/numerax/issues"
+Source = "https://github.com/juehang/numerax"
+
+[tool.hatch.version]
+path = "src/numerax/__init__.py"
+
+[tool.hatch.envs.default]
+dependencies = [
+  "coverage[toml]>=6.5",
+  "pytest",
+]
+[tool.hatch.envs.default.scripts]
+test = "pytest {args:tests}"
+test-cov = "coverage run -m pytest {args:tests}"
+cov-report = [
+  "- coverage combine",
+  "coverage report",
+]
+cov = [
+  "test-cov",
+  "cov-report",
+]
+
+[[tool.hatch.envs.all.matrix]]
+python = ["3.12"]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = [
+  "ruff>=0.0.243",
+]
+[tool.hatch.envs.lint.scripts]
+check = [
+  "ruff check {args:.}",
+  "ruff format --check --diff {args:.}",
+]
+fmt = [
+  "ruff format {args:.}",
+  "ruff check --fix {args:.}",
+  "check",
+]
+
+[tool.coverage.run]
+source_pkgs = ["numerax", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/numerax/__about__.py",
+]
+
+[tool.coverage.paths]
+numerax = ["src/numerax", "*/numerax/src/numerax"]
+tests = ["tests", "*/numerax/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
+
+[tool.ruff]
+line-length = 79
+target-version = "py312"
+extend-exclude = ["old_code"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "UP", # pyupgrade
+    "B",  # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I",  # isort
+    "ASYNC", # flake8-async
+    "S",  # flake8-bandit
+    "ARG", # flake8-unused-arguments
+    "Q",  # flake8-quotes
+    "SIM", # flake8-simplify
+    "NPY", # numpy-specific rules
+    "PD",  # pandas-specific rules
+    "N",  # pep8-naming
+    "W",  # warning
+    "PLC", # pylint convention
+    "PLE", # pylint error
+    "PLW", # pylint warning
+    "RUF", # ruff-specific rules
+]
+ignore = ["COM812"]  # Ignore trailing comma rule that conflicts with formatter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # Allow assert statements in tests
+
+# Enable Ruff's formatter
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true

@@ -1,0 +1,49 @@
+name: tests
+
+# Run tests on pushes to main and pull requests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# Security: restrict permissions for CI jobs
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      
+      # Extract Python version from pyproject.toml
+      - name: Get Python version from pyproject.toml
+        id: python-version
+        run: |
+          python_version=$(grep -E "requires-python.*=" pyproject.toml | sed -E 's/.*">=([0-9.]+)".*/\1/')
+          echo "version=$python_version" >> $GITHUB_OUTPUT
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.python-version.outputs.version }}
+          cache: 'pip'
+      
+      # Install the package with all dependencies
+      - name: Install dependencies
+        run: pip install -e .
+      
+      # Run code quality checks
+      - name: Lint with ruff
+        run: ruff check .
+      
+      - name: Check formatting with ruff
+        run: ruff format --check --diff .
+      
+      # Run tests
+      - name: Run tests with pytest
+        run: pytest tests/ -v

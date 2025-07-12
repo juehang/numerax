@@ -24,10 +24,16 @@ Advanced statistical computation tools for inference problems. Implements
 efficient algorithms for complex statistical models, with particular focus
 on optimization-based methods that benefit from JAX's compilation and
 differentiation capabilities.
+
+### Utilities (`numerax.utils`)
+
+Development utilities for creating JAX-compatible functions with proper
+documentation support. Includes decorators and helpers for preserving
+function metadata when using JAX's advanced features like custom derivatives.
 """
 
-from . import special, stats
+from . import special, stats, utils
 
 __version__ = "0.1.0"
 
-__all__ = ["special", "stats"]
+__all__ = ["special", "stats", "utils"]

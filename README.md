@@ -77,6 +77,10 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 - Configurable tolerance and initial values
 - Handles parameter masking automatically
 
+### Utilities
+
+Development utilities for creating JAX functions with custom derivatives while ensuring proper documentation support. Includes decorators for preserving function metadata when using JAX's advanced features.
+
 ## Requirements
 
 - Python ≥ 3.12

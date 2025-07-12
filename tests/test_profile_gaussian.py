@@ -104,9 +104,7 @@ def test_gaussian_profile_at_true_mean():
 
     # Test at sample mean (should be close to optimal)
     sample_mean = jnp.mean(data)
-    llh_val, opt_log_sigma, _, _ = profile_llh(
-        jnp.array([sample_mean]), data
-    )
+    llh_val, opt_log_sigma, _, _ = profile_llh(jnp.array([sample_mean]), data)
 
     sigma_opt = jnp.exp(opt_log_sigma[0])
     sigma_analytical = jnp.sqrt(jnp.mean((data - sample_mean) ** 2))

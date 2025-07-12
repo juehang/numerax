@@ -37,7 +37,7 @@ jobs:
       - run: pip install -e .
       
       # Build documentation with pdoc
-      - run: pdoc -o docs/ numerax
+      - run: pdoc --math -o docs/ numerax
 
       - uses: actions/upload-pages-artifact@v3
         with:

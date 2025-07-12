@@ -24,8 +24,7 @@ classifiers = [
 dependencies = [
   "jax",
   "jaxtyping",
-  "optax",
-  "pdoc"
+  "optax"
 ]
 
 [project.urls]
@@ -40,7 +39,9 @@ path = "src/numerax/__init__.py"
 dependencies = [
   "coverage[toml]>=6.5",
   "pytest",
-  "ruff"
+  "ruff",
+  "mkdocs-material",
+  "mkdocstrings[python]"
 ]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"

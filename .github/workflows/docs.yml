@@ -33,15 +33,15 @@ jobs:
         with:
           python-version: ${{ steps.python-version.outputs.version }}
 
-      # Install the package with all dependencies (including pdoc)
-      - run: pip install -e .
+      # Install Hatch
+      - run: pip install hatch
       
-      # Build documentation with pdoc
-      - run: pdoc --math -o docs/ numerax
+      # Build documentation with MkDocs using dev environment
+      - run: hatch run mkdocs build
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/
+          path: site/
 
   # Deploy the artifact to GitHub pages.
   # This is a separate job so that only actions/deploy-pages has the necessary permissions.

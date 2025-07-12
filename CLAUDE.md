@@ -18,10 +18,21 @@ Numerax is a Python package that provides useful statistics and numerical comput
 - Check code formatting and linting: `hatch run lint:check`
 - Auto-format and fix issues: `hatch run lint:fmt`
 
+### Documentation
+- Build documentation: `pdoc --math -o docs/ numerax`
+- Documentation is auto-deployed via GitHub Pages at https://juehang.github.io/numerax/
+
 ### Build System
 - The project uses Hatch with `hatchling` as the build backend
 - Version is managed in `src/numerax/__init__.py`
-- Runtime dependencies: JAX and optax for numerical computations and optimization
+- Runtime dependencies: JAX, optax, and pdoc for numerical computations, optimization, and documentation
+
+### CI/CD
+- GitHub Actions workflow for tests: `.github/workflows/test.yml`
+- GitHub Actions workflow for docs: `.github/workflows/docs.yml`
+- Uses official PyPA Hatch action for reliable environment setup
+- Automated testing on push/PR to main branch
+- Automatic documentation deployment to GitHub Pages
 
 ## Code Architecture
 
@@ -30,7 +41,8 @@ Numerax is a Python package that provides useful statistics and numerical comput
 - `src/numerax/__init__.py` - Package initialization with version info and stats import
 - `src/numerax/stats/` - Statistics module with profile likelihood functionality
 - `src/numerax/stats/profile.py` - Profile likelihood implementation (`make_profile_llh`)
-- `tests/` - Test directory
+- `tests/` - Test directory with analytical validation tests
+- `tests/test_profile_gaussian.py` - Gaussian profile likelihood tests with analytical validation
 
 ### Key Technical Details
 - Python 3.12+ required
@@ -51,4 +63,8 @@ Numerax is a Python package that provides useful statistics and numerical comput
 - Profile likelihood functionality implemented in `numerax.stats.make_profile_llh`
 - Uses JAX for JIT compilation and numerical computations
 - L-BFGS optimization via optax for maximizing over nuisance parameters
-- Comprehensive markdown documentation for pdoc compatibility
+- Comprehensive LaTeX documentation with raw docstrings for pdoc compatibility
+- Tests include analytical validation against known mathematical solutions
+- Uses relative tolerance for convergence matching internal optimization logic
+- Documentation includes mathematical equations rendered with LaTeX
+- GitHub Pages deployment provides professional documentation site

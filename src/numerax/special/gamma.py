@@ -74,6 +74,7 @@ def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
 
     # Verify inverse relationship
     from jax.scipy.special import gammainc
+
     p_recovered = gammainc(2.0, x)  # Should equal original p
 
     # Differentiable for optimization

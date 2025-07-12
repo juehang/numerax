@@ -1,4 +1,4 @@
-name: website
+name: documentation
 
 # build the documentation whenever there are new commits on main
 on:
@@ -21,15 +21,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      
+      # Extract Python version from pyproject.toml
+      - name: Get Python version from pyproject.toml
+        id: python-version
+        run: |
+          python_version=$(grep -E "requires-python.*=" pyproject.toml | sed -E 's/.*">=([0-9.]+)".*/\1/')
+          echo "version=$python_version" >> $GITHUB_OUTPUT
+      
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: ${{ steps.python-version.outputs.version }}
 
-      # ADJUST THIS: install all dependencies (including pdoc)
+      # Install the package with all dependencies (including pdoc)
       - run: pip install -e .
-      # ADJUST THIS: build your documentation into docs/.
-      # We use a custom build script for pdoc itself, ideally you just run `pdoc -o docs/ ...` here.
-      - run: python docs/make.py
+      
+      # Build documentation with pdoc
+      - run: pdoc -o docs/ numerax
 
       - uses: actions/upload-pages-artifact@v3
         with:

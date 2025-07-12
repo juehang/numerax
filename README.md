@@ -15,6 +15,32 @@ pip install numerax
 
 ## Features
 
+### Special Functions
+
+Inverse regularized incomplete gamma function with differentiability support:
+
+```python
+import jax.numpy as jnp
+import numerax
+
+# Compute gamma quantiles (inverse CDF)
+p = jnp.array([0.1, 0.5, 0.9])  # Probabilities
+a = 2.0  # Shape parameter
+
+x = numerax.special.gammap_inverse(p, a)
+# Returns quantiles where gammainc(a, x) = p
+
+# Fully differentiable with custom JVP
+grad_fn = jax.grad(numerax.special.gammap_inverse)
+dx_dp = grad_fn(0.5, 2.0)  # Gradient with respect to probability
+```
+
+**Key features:**
+- Halley's method for fast convergence
+- Custom JVP implementation for exact gradients
+- Numerical stability with adaptive precision
+- Equivalent to gamma distribution inverse CDF
+
 ### Profile Likelihood
 
 Efficient profile likelihood computation for statistical inference with nuisance parameters:
@@ -55,4 +81,5 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 
 - Python ≥ 3.12
 - JAX
+- jaxtyping
 - optax

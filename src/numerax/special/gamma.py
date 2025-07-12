@@ -11,19 +11,91 @@ EPS = jnp.finfo(_DTYPE).eps  # For convergence tolerance (machine epsilon)
 
 @jax.custom_jvp
 def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
-    """
-    Inverse of regularized incomplete gamma function using Halley's method.
+    r"""
+    Inverse of the regularized incomplete gamma function.
 
-    Finds x such that gammainc(a, x) = p.
-    This is equivalent to the inverse CDF of Gamma(a, 1) distribution.
-    Initial guess based on Numerical Recipes (Press et al., 2007).
+    ## Overview
 
-    Args:
-        p: Probability values in [0, 1]
-        a: Shape parameter (positive)
+    Computes the inverse of the regularized incomplete gamma function, finding
+    $x$ such that $P(a, x) = p$, where $P(a, x)$ is the regularized incomplete
+    gamma function. This is equivalent to computing quantiles of the
+    $\text{Gamma}(a, 1)$ distribution. The general strategy and the initial
+    guess are based on the methods described in
+    Numerical Recipes (Press et al., 2007).
 
-    Returns:
-        Quantiles where gammainc(a, x) = p
+    ## Mathematical Background
+
+    The regularized incomplete gamma function is defined as:
+
+    $$P(a, x) = \frac{\gamma(a, x)}{\Gamma(a)} = \frac{1}{\Gamma(a)}
+    \int_0^x t^{a-1} e^{-t} dt$$
+
+    This function solves the inverse problem:
+
+    $$x = P^{-1}(a, p) \quad \text{such that} \quad P(a, x) = p$$
+
+    For a random variable $X \sim \text{Gamma}(a, 1)$, this gives:
+
+    $$x = F^{-1}(p) \quad \text{where} \quad F(x) = P(\Gamma(a), x)$$
+
+    ## Numerical Method
+
+    Uses Halley's method for fast quadratic convergence:
+
+    $$x_{n+1} = x_n - \frac{2f(x_n)f'(x_n)}{2[f'(x_n)]^2 - f(x_n)f''(x_n)}$$
+
+    where $f(x) = P(a, x) - p$.
+
+    **Initial guess** based on Numerical Recipes (Press et al., 2007):
+    - For $a > 1$: Wilson-Hilferty approximation
+    - For $a \leq 1$: Asymptotic expansions
+
+    ## Args
+
+    - **p**: Probability values in $[0, 1]$. Can be scalar or array.
+    - **a**: Shape parameter (must be positive). Scalar value.
+
+    ## Returns
+
+    Quantiles $x$ where $P(a, x) = p$. Same shape as input `p`.
+
+    ## Example
+
+    ```python
+    import jax.numpy as jnp
+    import numerax
+
+    # Single quantile
+    x = numerax.special.gammap_inverse(0.5, 2.0)  # Median of Gamma(2, 1)
+
+    # Multiple quantiles
+    p_vals = jnp.array([0.1, 0.25, 0.5, 0.75, 0.9])
+    x_vals = numerax.special.gammap_inverse(p_vals, 3.0)
+
+    # Verify inverse relationship
+    from jax.scipy.special import gammainc
+    p_recovered = gammainc(2.0, x)  # Should equal original p
+
+    # Differentiable for optimization
+    grad_fn = jax.grad(numerax.special.gammap_inverse)
+    sensitivity = grad_fn(0.5, 2.0)  # ∂x/∂p at median
+    ```
+
+    ## Notes
+
+    - **Convergence**: Typically converges in 3-8 iterations
+    - **Differentiable**: Custom JVP implementation using implicit function
+      theorem
+    - **Numerical stability**: Handles edge cases near 0 and 1
+    - **Performance**: JIT-compiled with adaptive precision
+    - **Domain**: $p \in [0, 1]$ and $a > 0$
+
+    ## References
+
+    Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+    (2007).
+    *Numerical Recipes: The Art of Scientific Computing* (3rd ed.).
+    Cambridge University Press.
     """
 
     def objective(x):

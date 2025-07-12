@@ -1,3 +1,4 @@
+import functools
 import jax
 import jax.numpy as jnp
 import jax.scipy.special as special
@@ -215,3 +216,7 @@ def gammap_inverse_jvp(primals, tangents):
     x_dot = dx_dp * p_dot
 
     return x, x_dot
+
+
+# Fix documentation by copying metadata from original function
+functools.update_wrapper(gammap_inverse, gammap_inverse.fun)

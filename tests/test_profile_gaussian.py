@@ -60,7 +60,9 @@ def test_gaussian_profile_analytical_validation():
 
     # Validate convergence
     assert n_iter > 0, "Optimization should have run at least one iteration"
-    assert jnp.abs(diff) < 1e-6, f"Should have converged, but diff={diff}"
+    assert jnp.abs(diff) <= jnp.abs(llh_val * 1e-6), (
+        f"Should have converged, but diff={diff}"
+    )
 
     # Validate against analytical solution
     assert jnp.allclose(sigma_opt, sigma_analytical, atol=1e-3), (

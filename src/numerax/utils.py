@@ -34,7 +34,8 @@ def preserve_metadata(decorator):
 
     @preserve_metadata(jax.custom_jvp)
     def my_function(x):
-        \"\"\"This docstring will be preserved for pdoc.\"\"\"
+        \"\"\"This docstring will be preserved for automatic
+        documentation generation.\"\"\"
         return x
     ```
     """

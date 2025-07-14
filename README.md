@@ -87,3 +87,6 @@ Development utilities for creating JAX functions with custom derivatives while e
 - JAX
 - jaxtyping
 - optax
+
+## Acknowledgements
+This work is supported by the Department of Energy AI4HEP program.

@@ -1,2 +1,5 @@
 .ruff_cache/*
 CLAUDE.md
+*.pyc
+__pycache__/
+*.pyo

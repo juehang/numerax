@@ -1,6 +1,4 @@
 """
-# Numerax
-
 Statistical and numerical computation functions for JAX, focusing on tools
 not available in the main JAX API.
 

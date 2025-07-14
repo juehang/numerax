@@ -1,0 +1,84 @@
+name: publish
+
+# Publish to PyPI when a new release is created
+on:
+  release:
+    types: [published]
+
+# Security: restrict permissions for CI jobs
+permissions:
+  contents: read
+
+jobs:
+  # Build and test before publishing
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      # Install hatch for environment management
+      - name: Install Hatch
+        uses: pypa/hatch@install
+      
+      # Run code quality checks using hatch
+      - name: Run linting and formatting checks
+        run: hatch run lint:check
+      
+      # Run tests using hatch
+      - name: Run tests
+        run: hatch run test
+
+  # Build the package
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      # Install hatch for building
+      - name: Install Hatch
+        uses: pypa/hatch@install
+      
+      # Build the package
+      - name: Build package
+        run: hatch build
+      
+      # Upload build artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/
+
+  # Publish to PyPI
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for trusted publishing
+    environment:
+      name: pypi
+      url: https://pypi.org/p/numerax
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-artifacts
+          path: dist/
+      
+      # Publish to PyPI using trusted publishing
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

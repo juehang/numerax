@@ -3,3 +3,4 @@ CLAUDE.md
 *.pyc
 __pycache__/
 *.pyo
+test_output

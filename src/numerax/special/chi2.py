@@ -1,5 +1,6 @@
 import jax
 import jax.numpy as jnp
+from jax.scipy.stats.chi2 import *  # noqa: F403 # Used to import names into module namespace
 from jaxtyping import ArrayLike
 
 from .gamma import gammap_inverse

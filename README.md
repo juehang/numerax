@@ -26,7 +26,7 @@ import numerax
 # Gamma distribution quantiles
 x = numerax.special.gammap_inverse(p, a)
 
-# Chi-squared distribution quantiles  
+# Chi-squared distribution (includes JAX functions + custom ppf)
 x = numerax.special.chi2.ppf(q, df, loc=0, scale=1)
 ```
 

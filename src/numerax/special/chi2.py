@@ -5,6 +5,17 @@ from jaxtyping import ArrayLike
 
 from .gamma import gammap_inverse
 
+"""
+Chi-squared distribution functions.
+
+This module provides a complete interface for chi-squared distribution
+computations, combining re-exported JAX's standard statistical functions
+(pdf, cdf, etc.) with a custom high-precision percent point function (ppf).
+
+All functions support location-scale parameterization and are fully
+compatible with JAX transformations (JIT, grad, vmap).
+"""
+
 
 def _vectorized_gammap_inverse(q_flat, df_flat):
     """Helper function for vectorizing gammap_inverse over df parameter."""

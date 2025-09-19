@@ -1,14 +1,6 @@
 import jax
 from jaxtyping import ArrayLike
 
-"""
-Error functions and Fresnel integrals.
-
-This module provides error functions and Fresnel integrals that are missing
-from jax.scipy.special but available in scipy.special, offering complete
-compatibility with scipy's API while maintaining full JAX differentiability.
-"""
-
 
 def erfcinv(x: ArrayLike) -> ArrayLike:
     r"""

@@ -1,5 +1,4 @@
 import jax
-import jax.scipy.special
 from jaxtyping import ArrayLike
 
 """

@@ -9,19 +9,19 @@ functions with full differentiability support. All functions are designed to
 work seamlessly with JAX's transformations (JIT, grad, vmap, etc.) and follow
 JAX's functional programming paradigms.
 
-### Special Functions (`numerax.special`)
+### Special Functions ([`numerax.special`](numerax.special))
 
 Mathematical special functions with custom derivative implementations.
 Functions provide exact gradients through custom JVP rules where standard
 automatic differentiation would be inefficient or unstable.
 
-### Statistical Methods (`numerax.stats`)
+### Statistical Methods ([`numerax.stats`](numerax.stats))
 
 Advanced statistical computation tools for inference problems. Implements
 complex statistical models that benefit from JAX's compilation and
 differentiation capabilities.
 
-### Utilities (`numerax.utils`)
+### Utilities ([`numerax.utils`](numerax.utils))
 
 Development utilities for creating JAX-compatible functions with proper
 documentation support. Includes decorators and helpers for preserving

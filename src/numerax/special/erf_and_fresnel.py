@@ -35,7 +35,7 @@ def erfcinv(x: ArrayLike) -> ArrayLike:
 
     ## Returns
 
-    Values $y$ where $\text{erfc}(y) = x$. Shape follows JAX broadcasting rules.
+    Values $y$ where $\text{erfc}(y) = x$.
 
     ## Example
 

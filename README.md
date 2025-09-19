@@ -23,8 +23,9 @@ Inverse functions for statistical distributions with differentiability support:
 import jax.numpy as jnp
 import numerax
 
-# Gamma distribution quantiles
-x = numerax.special.gammap_inverse(p, a)
+# Inverse functions for statistical distributions
+x = numerax.special.gammap_inverse(p, a)  # Gamma quantiles
+y = numerax.special.erfcinv(x)  # Inverse complementary error function
 
 # Chi-squared distribution (includes JAX functions + custom ppf)
 x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)

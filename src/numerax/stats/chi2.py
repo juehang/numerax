@@ -1,10 +1,3 @@
-import jax
-import jax.numpy as jnp
-from jax.scipy.stats.chi2 import *  # noqa: F403 # Used to import names into module namespace
-from jaxtyping import ArrayLike
-
-from numerax.special.gamma import gammap_inverse
-
 """
 Chi-squared distribution functions.
 
@@ -15,6 +8,13 @@ computations, combining re-exported JAX's standard statistical functions
 All functions support location-scale parameterization and are fully
 compatible with JAX transformations (JIT, grad, vmap).
 """
+
+import jax
+import jax.numpy as jnp
+from jax.scipy.stats.chi2 import *  # noqa: F403 # Used to import names into module namespace
+from jaxtyping import ArrayLike
+
+from numerax.special.gamma import gammap_inverse
 
 
 def _vectorized_gammap_inverse(q_flat, df_flat):

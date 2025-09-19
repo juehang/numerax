@@ -78,4 +78,4 @@ Development utilities for creating JAX functions with custom derivatives while e
 This work is supported by the Department of Energy AI4HEP program.
 
 ## Citation
-If you use `numerax` in your research, please cite it using the citation information from Zenodo (click the DOI badge above) to ensure you get the correct DOI for the version you used.
+If you use `numerax` in your research, please cite it using the citation information from Zenodo (click the DOI badge at the top of the page) to ensure you get the correct DOI for the version you used.

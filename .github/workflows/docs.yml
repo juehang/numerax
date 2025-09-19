@@ -35,7 +35,10 @@ jobs:
 
       # Install Hatch
       - run: pip install hatch
-      
+
+      # Install package in editable mode for documentation generation
+      - run: hatch run pip install -e .
+
       # Build documentation with MkDocs using dev environment
       - run: hatch run mkdocs build
 

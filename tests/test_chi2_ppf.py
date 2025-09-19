@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import pytest
 from scipy.stats import chi2 as scipy_chi2
 
-from numerax.special import chi2
+from numerax.stats import chi2
 
 
 @pytest.mark.parametrize(

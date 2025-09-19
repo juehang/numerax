@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from jax.scipy.stats.chi2 import *  # noqa: F403 # Used to import names into module namespace
 from jaxtyping import ArrayLike
 
-from .gamma import gammap_inverse
+from numerax.special.gamma import gammap_inverse
 
 """
 Chi-squared distribution functions.
@@ -75,17 +75,17 @@ def ppf(
     import numerax
 
     # Single quantile
-    x = numerax.special.chi2.ppf(0.5, df=2)  # Median of χ²(2)
+    x = numerax.stats.chi2.ppf(0.5, df=2)  # Median of χ²(2)
 
     # Multiple quantiles
     q_vals = jnp.array([0.1, 0.25, 0.5, 0.75, 0.9])
-    x_vals = numerax.special.chi2.ppf(q_vals, df=3)
+    x_vals = numerax.stats.chi2.ppf(q_vals, df=3)
 
     # Location-scale family
-    x_scaled = numerax.special.chi2.ppf(0.5, df=2, loc=1, scale=2)
+    x_scaled = numerax.stats.chi2.ppf(0.5, df=2, loc=1, scale=2)
 
     # Differentiable for optimization
-    grad_fn = jax.grad(numerax.special.chi2.ppf)
+    grad_fn = jax.grad(numerax.stats.chi2.ppf)
     sensitivity = grad_fn(0.5, 2.0)  # ∂x/∂q at median
     ```
 

@@ -4,7 +4,7 @@ Test that all chi-squared functions can be imported and called.
 
 import jax.numpy as jnp
 
-from numerax.special import chi2
+from numerax.stats import chi2
 
 
 def test_pdf():

@@ -32,6 +32,6 @@ function metadata when using JAX's advanced features like custom derivatives.
 
 from . import special, stats, utils
 
-__version__ = "0.3.0"
+__version__ = "1.0.0"
 
 __all__ = ["special", "stats", "utils"]

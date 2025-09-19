@@ -14,7 +14,7 @@ import jax.numpy as jnp
 from jax.scipy.stats.chi2 import *  # noqa: F403 # Used to import names into module namespace
 from jaxtyping import ArrayLike
 
-from numerax.special.gamma import gammap_inverse
+from numerax.special import gammap_inverse
 
 
 def _vectorized_gammap_inverse(q_flat, df_flat):

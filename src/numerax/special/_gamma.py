@@ -87,8 +87,6 @@ def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
     - **Convergence**: Typically converges in 3-8 iterations
     - **Differentiable**: Custom JVP implementation using implicit function
       theorem
-    - **Numerical stability**: Handles edge cases near 0 and 1
-    - **Performance**: JIT-compiled with adaptive precision
     - **Domain**: $p \in [0, 1]$ and $a > 0$
 
     ## References

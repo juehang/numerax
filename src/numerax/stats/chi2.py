@@ -93,8 +93,6 @@ def ppf(
 
     - **Differentiable**: Automatic differentiation through `gammap_inverse`
     - **Broadcasting**: Supports JAX array broadcasting for all parameters
-    - **Numerical stability**: Inherits stability from underlying
-      `gammap_inverse`
     - **Performance**: JIT-compiled compatibility
     """
     # Convert inputs to JAX arrays to enable broadcasting

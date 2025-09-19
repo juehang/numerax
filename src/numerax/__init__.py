@@ -12,15 +12,13 @@ JAX's functional programming paradigms.
 ### Special Functions (`numerax.special`)
 
 Mathematical special functions with custom derivative implementations.
-Functions use numerically stable algorithms and provide exact gradients
-through custom JVP rules where standard automatic differentiation would
-be inefficient or unstable.
+Functions provide exact gradients through custom JVP rules where standard
+automatic differentiation would be inefficient or unstable.
 
 ### Statistical Methods (`numerax.stats`)
 
 Advanced statistical computation tools for inference problems. Implements
-efficient algorithms for complex statistical models, with particular focus
-on optimization-based methods that benefit from JAX's compilation and
+complex statistical models that benefit from JAX's compilation and
 differentiation capabilities.
 
 ### Utilities (`numerax.utils`)

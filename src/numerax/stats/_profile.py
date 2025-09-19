@@ -125,7 +125,7 @@ def make_profile_llh(
     - Returns convergence information for diagnostics
     - Handles parameter masking automatically
     - Consider using log-parameterization for positive parameters
-      (e.g., $\log \sigma$) to improve numerical stability
+      (e.g., $\log \sigma$) for unconstrained optimization
     - This function might not work well if the likelihood surface has
       multiple local maxima; in such cases, consider ensuring that
       initial guesses are close to the global maximum.

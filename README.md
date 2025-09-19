@@ -32,10 +32,8 @@ x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)
 ```
 
 **Key features:**
-- Halley's method for fast convergence
-- Custom JVP implementation for exact gradients  
-- Numerical stability with adaptive precision
-- Full JAX transformation compatibility
+- Inverse functions for statistical distributions missing from JAX
+- Full differentiability and JAX transformation support
 
 ### Profile Likelihood
 
@@ -68,10 +66,8 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 ```
 
 **Key features:**
-- JIT-compiled for performance
-- L-BFGS optimization with convergence diagnostics
-- Configurable tolerance and initial values
-- Handles parameter masking automatically
+- Convergence diagnostics and configurable optimization parameters
+- Automatic parameter masking for inference vs. nuisance parameters
 
 ### Utilities
 

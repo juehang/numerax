@@ -2,6 +2,7 @@
 
 [![tests](https://github.com/juehang/numerax/actions/workflows/test.yml/badge.svg)](https://github.com/juehang/numerax/actions/workflows/test.yml)
 [![docs](https://github.com/juehang/numerax/actions/workflows/docs.yml/badge.svg)](https://juehang.github.io/numerax/)
+[![DOI](https://zenodo.org/badge/1018495069.svg)](https://zenodo.org/badge/latestdoi/1018495069)
 
 Statistical and numerical computation functions for JAX, focusing on tools not available in the main JAX API.
 
@@ -73,12 +74,8 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 
 Development utilities for creating JAX functions with custom derivatives while ensuring proper documentation support. Includes decorators for preserving function metadata when using JAX's advanced features.
 
-## Requirements
-
-- Python ≥ 3.12
-- JAX
-- jaxtyping
-- optax
-
 ## Acknowledgements
 This work is supported by the Department of Energy AI4HEP program.
+
+## Citation
+If you use `numerax` in your research, please cite it using the citation information from Zenodo (click the DOI badge above) to ensure you get the correct DOI for the version you used.

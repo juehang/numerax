@@ -9,54 +9,35 @@ on:
     # tags:
     #   - '*'
 
-# security: restrict permissions for CI jobs.
+# permissions for mkdocs gh-deploy
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  # Build the documentation and upload the static HTML files as an artifact.
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      
+
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+
       # Extract Python version from pyproject.toml
       - name: Get Python version from pyproject.toml
         id: python-version
         run: |
           python_version=$(grep -E "requires-python.*=" pyproject.toml | sed -E 's/.*">=([0-9.]+)".*/\1/')
           echo "version=$python_version" >> $GITHUB_OUTPUT
-      
+
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ steps.python-version.outputs.version }}
 
-      # Install Hatch
-      - run: pip install hatch
+      # Install package and documentation dependencies
+      - run: pip install -e .
+      - run: pip install mkdocs-material mkdocstrings[python]
 
-      # Install package in editable mode for documentation generation
-      - run: hatch run pip install -e .
-
-      # Build documentation with MkDocs using dev environment
-      - run: hatch run mkdocs build
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site/
-
-  # Deploy the artifact to GitHub pages.
-  # This is a separate job so that only actions/deploy-pages has the necessary permissions.
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      # Build and deploy documentation
+      - run: mkdocs gh-deploy --force

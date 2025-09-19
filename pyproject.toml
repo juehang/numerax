@@ -28,7 +28,7 @@ dependencies = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/juehang/numerax#readme"
+Documentation = "https://juehang.github.io/numerax/"
 Issues = "https://github.com/juehang/numerax/issues"
 Source = "https://github.com/juehang/numerax"
 

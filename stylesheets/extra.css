@@ -1,0 +1,18 @@
+/* Custom styles for MkDocs Material theme */
+
+/* Improve math rendering */
+.arithmatex {
+  padding: 0.5em;
+  margin: 1em 0;
+}
+
+/* Better code block styling */
+.highlight pre {
+  padding: 1em;
+  overflow-x: auto;
+}
+
+/* Improve navigation */
+.md-nav__item .md-nav__link--active {
+  font-weight: bold;
+}

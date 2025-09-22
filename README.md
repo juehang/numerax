@@ -1,6 +1,7 @@
 # numerax
 
 [![tests](https://github.com/juehang/numerax/actions/workflows/test.yml/badge.svg)](https://github.com/juehang/numerax/actions/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/juehang/numerax/badge.svg?branch=main)](https://coveralls.io/github/juehang/numerax?branch=main)
 [![docs](https://github.com/juehang/numerax/actions/workflows/docs.yml/badge.svg)](https://juehang.github.io/numerax/)
 [![DOI](https://zenodo.org/badge/1018495069.svg)](https://zenodo.org/badge/latestdoi/1018495069)
 

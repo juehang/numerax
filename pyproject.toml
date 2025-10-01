@@ -27,6 +27,9 @@ dependencies = [
   "optax"
 ]
 
+[project.optional-dependencies]
+sciml = ["equinox"]
+
 [project.urls]
 Documentation = "https://juehang.github.io/numerax/"
 Issues = "https://github.com/juehang/numerax/issues"
@@ -43,6 +46,7 @@ dependencies = [
   "mkdocs-material",
   "mkdocstrings[python]"
 ]
+features = ["sciml"]
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
 test-cov = "coverage run -m pytest {args:tests}"

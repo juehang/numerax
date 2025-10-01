@@ -13,6 +13,9 @@ Statistical and numerical computation functions for JAX, focusing on tools not a
 
 ```bash
 pip install numerax
+
+# With scientific ML dependencies like equinox
+pip install numerax[sciml]
 ```
 
 ## Features
@@ -73,7 +76,19 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 
 ### Utilities
 
-Development utilities for creating JAX functions with custom derivatives while ensuring proper documentation support. Includes decorators for preserving function metadata when using JAX's advanced features.
+Utilities such as parameter counting.
+
+```python
+from numerax.utils import count_params
+
+# Count parameters in PyTree-based models
+model = {"weights": jnp.ones((10, 5)), "bias": jnp.zeros(5)}
+num_params = count_params(model)  # 55 parameters
+```
+
+**Key features:**
+- Parameter counting for PyTree-based models (requires `numerax[sciml]`)
+- Decorators for preserving function metadata when using JAX's advanced features
 
 ## Acknowledgements
 This work is supported by the Department of Energy AI4HEP program.

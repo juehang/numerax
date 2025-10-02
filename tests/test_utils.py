@@ -213,6 +213,7 @@ def _make_equinox_model():
                 "layer1": {
                     "weight": jnp.ones((5, 3)),
                     "bias": jnp.zeros(3),
+                    "useless_variable": jnp.array([]),
                 },
                 "empty_container": {},
                 "config": {

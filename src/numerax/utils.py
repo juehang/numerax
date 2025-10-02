@@ -149,3 +149,186 @@ def count_params(pytree, filter=None, verbose=True):
         print(f"Number of parameters: {num_params:.1e}")
 
     return num_params
+
+
+def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
+    """
+    Pretty-print PyTree structure with shapes and parameter counts.
+
+    ## Overview
+
+    This function displays a hierarchical view of a PyTree structure
+    (e.g., neural network models) showing the organization, array shapes,
+    data types, and parameter counts at each level. The output is
+    similar to Keras' `model.summary()` or torchinfo's summaries.
+
+    ## Args
+
+    - **pytree**: The PyTree structure to summarize (e.g., a model,
+      dict of arrays, or nested structure)
+    - **is_leaf**: Optional function to identify leaf nodes. If `None`,
+      uses `equinox.is_array` as the default. Leaf nodes are displayed
+      with shape, dtype, and parameter count details. Custom functions
+      should accept a single argument and return `True` for leaves
+    - **max_depth**: Maximum nesting depth to display. Nodes deeper
+      than this level will not be shown. Defaults to 3
+    - **verbose**: If `True`, prints the formatted summary. If `False`,
+      only returns the total parameter count silently
+
+    ## Returns
+
+    The total number of parameters as an integer
+
+    ## Requirements
+
+    - **equinox**: Install with `pip install numerax[sciml]` or
+      `pip install equinox` (required when using default `is_leaf`)
+
+    ## Example
+
+    ```python
+    import jax.numpy as jnp
+    from numerax.utils import tree_summary
+
+    # Nested dict-based model
+    model = {
+        "encoder": {
+            "weights": jnp.ones((10, 20)),
+            "bias": jnp.zeros(20),
+        },
+        "decoder": {
+            "weights": jnp.ones((20, 5)),
+            "bias": jnp.zeros(5),
+        },
+    }
+
+    count = tree_summary(model)
+    # Prints formatted table showing structure
+    # Returns: 325
+
+    # With custom is_leaf function
+    tree_summary(model, is_leaf=lambda x: hasattr(x, "shape"))
+
+    # Limit depth
+    tree_summary(model, max_depth=2)
+
+    # Silent mode
+    count = tree_summary(model, verbose=False)
+    # Returns: 325 without printing
+    ```
+
+    ## Output Format
+
+    ```
+    ==================================================================
+    PyTree Summary
+    ==================================================================
+    Name                  Shape           Dtype           Params
+    ------------------------------------------------------------------
+    encoder                                                   220
+      - weights           [10,20]         f32               200
+      - bias              [20]            f32                20
+    decoder                                                   105
+      - weights           [20,5]          f32               100
+      - bias              [5]             f32                 5
+    ==================================================================
+    Total params: 325
+    ==================================================================
+    ```
+
+    ## Notes
+
+    - Container nodes (dicts, lists, modules) show total parameter
+      counts for their entire subtree
+    - Leaf nodes (arrays) show shape, dtype, and individual param count
+    - Indentation shows nesting depth in the PyTree structure
+    - Works with Equinox modules, nested dicts, lists, tuples, and
+      custom PyTree nodes
+    - Use custom `is_leaf` functions to control what counts as a leaf
+      node (useful for custom PyTree registrations)
+    """
+    import equinox as eqx  # noqa: PLC0415
+
+    if is_leaf is None:
+        is_leaf = eqx.is_array
+
+    # Column widths for alignment
+    col_name = 22
+    col_shape = 16
+    col_dtype = 12
+    col_params = 12
+    total_width = 70
+
+    lines = []
+    total_params = [0]  # Mutable container for accumulation
+
+    def _traverse(pytree, name, depth):
+        """Recursively traverse PyTree and collect formatted lines."""
+        if depth > max_depth:
+            return
+
+        indent = "  " * depth
+
+        if is_leaf(pytree):
+            # Leaf node - format with shape, dtype, params
+            shape_str = f"[{','.join(map(str, pytree.shape))}]"
+            dtype_str = pytree.dtype.name
+            params = pytree.size
+
+            line = (
+                f"{indent}- {name:<{col_name-2}}{shape_str:<{col_shape}}"
+                f"{dtype_str:<{col_dtype}}{params:>{col_params},}"
+            )
+            lines.append(line)
+            total_params[0] += params
+        else:
+            # Container node - format with total params for subtree
+            subtree_params = count_params(
+                pytree, filter=is_leaf, verbose=False
+            )
+
+            header = (
+                f"{indent}{name:<{col_name}}{'':<{col_shape}}"
+                f"{'':<{col_dtype}}{subtree_params:>{col_params},}"
+            )
+            lines.append(header)
+
+            # Recurse into children based on container type
+            if isinstance(pytree, dict):
+                for key, value in pytree.items():
+                    _traverse(value, str(key), depth + 1)
+            elif isinstance(pytree, (list, tuple)):
+                for i, value in enumerate(pytree):
+                    _traverse(value, f"[{i}]", depth + 1)
+            elif hasattr(pytree, "__dict__"):
+                # Equinox modules, dataclasses, etc.
+                for key, value in vars(pytree).items():
+                    _traverse(value, key, depth + 1)
+
+    # Traverse the tree
+    _traverse(pytree, "root", 0)
+
+    if verbose:
+        # Print header
+        print("=" * total_width)
+        print("PyTree Summary")
+        print("=" * total_width)
+
+        # Print column headers
+        header_line = (
+            f"{'Name':<{col_name}}{'Shape':<{col_shape}}"
+            f"{'Dtype':<{col_dtype}}{'Params':>{col_params}}"
+        )
+        print(header_line)
+        print("-" * total_width)
+
+        # Print tree structure
+        for line in lines:
+            print(line)
+
+        # Print footer
+        print("=" * total_width)
+        print(f"Total params: {total_params[0]:,}")
+        print("=" * total_width)
+
+    return total_params[0]

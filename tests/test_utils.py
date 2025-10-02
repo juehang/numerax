@@ -207,7 +207,7 @@ def _make_equinox_model():
         ),
         # Equinox module
         (_make_equinox_model(), 55, "equinox_module"),
-        # With empty containers and primitive leaves (tests hide_empty=True default)
+        # With empty containers and primitive leaves
         (
             {
                 "layer1": {

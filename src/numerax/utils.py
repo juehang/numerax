@@ -315,7 +315,14 @@ def tree_summary(
                     _traverse(value, str(key), depth + 1)
             elif isinstance(pytree, list | tuple):
                 for i, value in enumerate(pytree):
-                    _traverse(value, f"[{i}]", depth + 1)
+                    # Try to get a meaningful name for the element
+                    if hasattr(value, "__name__"):
+                        child_name = f"[{i}] {value.__name__}"
+                    elif hasattr(value, "__class__"):
+                        child_name = f"[{i}] {value.__class__.__name__}"
+                    else:
+                        child_name = f"[{i}]"
+                    _traverse(value, child_name, depth + 1)
             elif hasattr(pytree, "__dict__"):
                 # Equinox modules, dataclasses, etc.
                 for key, value in vars(pytree).items():

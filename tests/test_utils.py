@@ -207,6 +207,22 @@ def _make_equinox_model():
         ),
         # Equinox module
         (_make_equinox_model(), 55, "equinox_module"),
+        # With empty containers and primitive leaves (tests hide_empty=True default)
+        (
+            {
+                "layer1": {
+                    "weight": jnp.ones((5, 3)),
+                    "bias": jnp.zeros(3),
+                },
+                "empty_container": {},
+                "config": {
+                    "name": "test",
+                    "version": 1,
+                },
+            },
+            18,
+            "with_empty_nodes",
+        ),
     ],
 )
 def test_tree_summary_structures(model, expected_count, description):

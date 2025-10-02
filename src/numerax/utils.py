@@ -279,7 +279,8 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             params = count_params(pytree, filter=is_leaf, verbose=False)
 
             line = (
-                f"{indent}- {name:<{col_name - 2}}{shape_str:<{col_shape}}"
+                f"{indent}- {name:<{col_name - len(indent) - 2}}"
+                f"{shape_str:<{col_shape}}"
                 f"{dtype_str:<{col_dtype}}{params:>{col_params},}"
             )
             lines.append(line)
@@ -290,7 +291,8 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             )
 
             header = (
-                f"{indent}{name:<{col_name}}{'':<{col_shape}}"
+                f"{indent}{name:<{col_name - len(indent)}}"
+                f"{'':<{col_shape}}"
                 f"{'':<{col_dtype}}{subtree_params:>{col_params},}"
             )
             lines.append(header)

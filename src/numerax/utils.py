@@ -151,7 +151,9 @@ def count_params(pytree, filter=None, verbose=True):
     return num_params
 
 
-def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
+def tree_summary(
+    pytree, is_leaf=None, max_depth=3, verbose=True, hide_empty=True
+):
     """
     Pretty-print PyTree structure with shapes and parameter counts.
 
@@ -174,6 +176,10 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
       than this level will not be shown. Defaults to 3
     - **verbose**: If `True`, prints the formatted summary. If `False`,
       only returns the total parameter count silently
+    - **hide_empty**: If `True`, skips nodes with zero parameters.
+      Defaults to `True` to avoid clutter from primitive attributes
+      (integers, strings, functions) in neural network modules that
+      don't contribute to parameter counts
 
     ## Returns
 
@@ -278,6 +284,9 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             # Use count_params for consistency
             params = count_params(pytree, filter=is_leaf, verbose=False)
 
+            if hide_empty and params == 0:
+                return
+
             line = (
                 f"{indent}- {name:<{col_name - len(indent) - 2}}"
                 f"{shape_str:<{col_shape}}"
@@ -289,6 +298,9 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             subtree_params = count_params(
                 pytree, filter=is_leaf, verbose=False
             )
+
+            if hide_empty and subtree_params == 0:
+                return
 
             header = (
                 f"{indent}{name:<{col_name - len(indent)}}"

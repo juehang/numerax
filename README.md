@@ -76,18 +76,48 @@ llh_val, opt_nuisance, diff, n_iter = profile_llh(jnp.array([1.0]), data)
 
 ### Utilities
 
-Utilities such as parameter counting.
+Utilities for working with PyTree-based models, including parameter counting and model summaries.
 
 ```python
-from numerax.utils import count_params
+from numerax.utils import count_params, tree_summary
+import jax.numpy as jnp
 
 # Count parameters in PyTree-based models
 model = {"weights": jnp.ones((10, 5)), "bias": jnp.zeros(5)}
 num_params = count_params(model)  # 55 parameters
+
+# Pretty-print model structure (similar to Keras model.summary())
+model = {
+    "encoder": {
+        "weights": jnp.ones((10, 20)),
+        "bias": jnp.zeros(20),
+    },
+    "decoder": {
+        "weights": jnp.ones((20, 5)),
+        "bias": jnp.zeros(5),
+    },
+}
+tree_summary(model)
+# ======================================================================
+# PyTree Summary
+# ======================================================================
+# Name                  Shape           Dtype             Params
+# ----------------------------------------------------------------------
+# root                                                       325
+#   encoder                                                  220
+#     - weights         [10,20]         float32              200
+#     - bias            [20]            float32               20
+#   decoder                                                  105
+#     - weights         [20,5]          float32              100
+#     - bias            [5]             float32                5
+# ======================================================================
+# Total params: 325
+# ======================================================================
 ```
 
 **Key features:**
-- Parameter counting for PyTree-based models (requires `numerax[sciml]`)
+- Parameter counting for PyTree-based models including Equinox (requires `numerax[sciml]`)
+- Model structure visualization with shapes, dtypes, and parameter counts
 - Decorators for preserving function metadata when using JAX's advanced features
 
 ## Acknowledgements

@@ -162,7 +162,8 @@ def tree_summary(
     This function displays a hierarchical view of a PyTree structure
     (e.g., neural network models) showing the organization, array shapes,
     data types, and parameter counts at each level. The output is
-    similar to Keras' `model.summary()` or torchinfo's summaries.
+    similar to Keras' `model.summary()` or torchinfo's summaries. This is
+    compatible with PyTree-based models from frameworks like Equinox.
 
     ## Args
 

@@ -260,7 +260,9 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
     total_width = 70
 
     lines = []
-    total_params = [0]  # Mutable container for accumulation
+
+    # Calculate total params once using existing utility
+    total_params = count_params(pytree, filter=is_leaf, verbose=False)
 
     def _traverse(pytree, name, depth):
         """Recursively traverse PyTree and collect formatted lines."""
@@ -273,16 +275,16 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             # Leaf node - format with shape, dtype, params
             shape_str = f"[{','.join(map(str, pytree.shape))}]"
             dtype_str = pytree.dtype.name
-            params = pytree.size
+            # Use count_params for consistency
+            params = count_params(pytree, filter=is_leaf, verbose=False)
 
             line = (
-                f"{indent}- {name:<{col_name-2}}{shape_str:<{col_shape}}"
+                f"{indent}- {name:<{col_name - 2}}{shape_str:<{col_shape}}"
                 f"{dtype_str:<{col_dtype}}{params:>{col_params},}"
             )
             lines.append(line)
-            total_params[0] += params
         else:
-            # Container node - format with total params for subtree
+            # Container node - use count_params for subtree total
             subtree_params = count_params(
                 pytree, filter=is_leaf, verbose=False
             )
@@ -297,7 +299,7 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
             if isinstance(pytree, dict):
                 for key, value in pytree.items():
                     _traverse(value, str(key), depth + 1)
-            elif isinstance(pytree, (list, tuple)):
+            elif isinstance(pytree, list | tuple):
                 for i, value in enumerate(pytree):
                     _traverse(value, f"[{i}]", depth + 1)
             elif hasattr(pytree, "__dict__"):
@@ -328,7 +330,7 @@ def tree_summary(pytree, is_leaf=None, max_depth=3, verbose=True):
 
         # Print footer
         print("=" * total_width)
-        print(f"Total params: {total_params[0]:,}")
+        print(f"Total params: {total_params:,}")
         print("=" * total_width)
 
-    return total_params[0]
+    return total_params

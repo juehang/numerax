@@ -147,6 +147,20 @@ def _make_equinox_model():
     return Model(jax.random.PRNGKey(0))
 
 
+def _helper_function():
+    """Helper function for testing __name__ attribute in lists."""
+    pass
+
+
+class _PathologicalObject:
+    """Object that blocks __name__ and __class__ attribute access."""
+
+    def __getattribute__(self, name):
+        if name in ("__name__", "__class__"):
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+        return super().__getattribute__(name)
+
+
 @pytest.mark.parametrize(
     ("model", "expected_count", "description"),
     [
@@ -223,6 +237,18 @@ def _make_equinox_model():
             },
             18,
             "with_empty_nodes",
+        ),
+        # List with function object (covers __name__ path)
+        (
+            [_helper_function, jnp.ones((3, 3))],
+            9,
+            "list_with_function",
+        ),
+        # List with pathological object (covers fallback path)
+        (
+            [_PathologicalObject(), jnp.ones((3, 3))],
+            9,
+            "list_with_pathological_object",
         ),
     ],
 )

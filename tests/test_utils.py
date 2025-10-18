@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import pytest
 
-from numerax.utils import count_params, tree_summary
+from numerax.utils import count_params, preserve_metadata, tree_summary
 
 
 @pytest.mark.parametrize(
@@ -328,3 +328,68 @@ def test_tree_summary_list_structure(capsys):
     assert "[0]" in output
     assert "[1]" in output
     assert count == 13  # 9 + 4
+
+
+# Tests for preserve_metadata
+
+
+def test_preserve_metadata_with_custom_jvp():
+    """Test that preserve_metadata works with JAX custom_jvp."""
+
+    @preserve_metadata(jax.custom_jvp)
+    def square(x):
+        """Compute the square of x."""
+        return x**2
+
+    @square.defjvp
+    def square_jvp(primals, tangents):
+        (x,) = primals
+        (x_dot,) = tangents
+        return square(x), 2 * x * x_dot
+
+    # Test metadata preservation
+    assert square.__name__ == "square"
+    assert square.__doc__ == "Compute the square of x."
+    assert square.__module__ == "tests.test_utils"
+
+    # Test functionality
+    result = square(3.0)
+    assert jnp.isclose(result, 9.0)
+
+    # Test that gradients work
+    grad_fn = jax.grad(square)
+    gradient = grad_fn(3.0)
+    assert jnp.isclose(gradient, 6.0)
+
+
+def test_preserve_metadata_with_simple_decorator():
+    """Test preserve_metadata with a non-preserving decorator."""
+
+    # Create a decorator that doesn't preserve metadata
+    def simple_decorator(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    # Without preserve_metadata, metadata is lost
+    @simple_decorator
+    def func_without_preserve():
+        """This docstring will be lost."""
+        return 42
+
+    assert func_without_preserve.__name__ == "wrapper"
+    assert func_without_preserve.__doc__ is None
+
+    # With preserve_metadata, metadata is preserved
+    @preserve_metadata(simple_decorator)
+    def func_with_preserve():
+        """This docstring will be preserved."""
+        return 42
+
+    assert func_with_preserve.__name__ == "func_with_preserve"
+    assert func_with_preserve.__doc__ == "This docstring will be preserved."
+
+    # Both still function correctly
+    assert func_without_preserve() == 42
+    assert func_with_preserve() == 42

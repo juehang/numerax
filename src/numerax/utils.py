@@ -19,9 +19,11 @@ def preserve_metadata(decorator):
 
     ## Overview
 
-    This is particularly useful for JAX decorators like `@custom_jvp` that
-    create special objects which may not preserve `__doc__` and other metadata
-    properly for documentation generators like pdoc.
+    When wrapping functions with decorators, metadata like `__name__`,
+    `__doc__`, and `__module__` can be lost if the decorator doesn't
+    explicitly preserve them. This wrapper uses `functools.wraps` to
+    ensure metadata is maintained, which is important for documentation
+    generators like pdoc and for debugging.
 
     ## Args
 
@@ -34,13 +36,24 @@ def preserve_metadata(decorator):
     ## Example
 
     ```python
-    import jax
     from numerax.utils import preserve_metadata
 
-    @preserve_metadata(jax.custom_jvp)
-    def my_function(x):
-        \"\"\"This docstring will be preserved for automatic
-        documentation generation.\"\"\"
+    # A simple decorator that doesn't preserve metadata
+    def my_decorator(func):
+        def wrapper(*args, **kwargs):
+            return func(*args, **kwargs)
+        return wrapper
+
+    # Without preserve_metadata, __doc__ and __name__ are lost
+    @my_decorator
+    def func1(x):
+        \"\"\"This docstring will be lost.\"\"\"
+        return x
+
+    # With preserve_metadata, they are preserved
+    @preserve_metadata(my_decorator)
+    def func2(x):
+        \"\"\"This docstring will be preserved.\"\"\"
         return x
     ```
     """

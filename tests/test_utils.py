@@ -157,7 +157,8 @@ class _PathologicalObject:
 
     def __getattribute__(self, name):
         if name in ("__name__", "__class__"):
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            msg = f"'{type(self).__name__}' object has no attribute '{name}'"
+            raise AttributeError(msg)
         return super().__getattribute__(name)
 
 

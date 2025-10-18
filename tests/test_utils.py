@@ -147,11 +147,6 @@ def _make_equinox_model():
     return Model(jax.random.PRNGKey(0))
 
 
-def _helper_function():
-    """Helper function for testing __name__ attribute in lists."""
-    pass
-
-
 class _PathologicalObject:
     """Object that blocks __name__ and __class__ attribute access."""
 
@@ -241,7 +236,7 @@ class _PathologicalObject:
         ),
         # List with function object (covers __name__ path)
         (
-            [_helper_function, jnp.ones((3, 3))],
+            [len, jnp.ones((3, 3))],
             9,
             "list_with_function",
         ),
@@ -355,6 +350,19 @@ def test_tree_summary_list_structure(capsys):
     assert "[0]" in output
     assert "[1]" in output
     assert count == 13  # 9 + 4
+
+
+def test_pathological_object_normal_attribute():
+    """Test PathologicalObject blocking __class__ access."""
+    obj = _PathologicalObject()
+    # Verify __class__ is blocked
+    with pytest.raises(AttributeError):
+        _ = obj.__class__
+    # Verify __name__ is blocked too
+    with pytest.raises(AttributeError):
+        _ = obj.__name__
+    # Normal attributes should be accessible (hits return path)
+    assert hasattr(obj, "__dict__")
 
 
 # Tests for preserve_metadata

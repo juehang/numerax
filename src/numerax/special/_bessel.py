@@ -216,7 +216,7 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
 
     ### Regime-validity overlay
 
-    Where each regime meets the 1e-7 per-cell accuracy target:
+    Where each regime has relative error below 1e-7 vs. ``scipy.special.ive``:
 
     ![Regime validity overlay](https://github.com/juehang/numerax/raw/main/scripts/calibration_plots/regime_validity.png)
 

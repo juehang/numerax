@@ -196,11 +196,36 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     $z$ (decays like $1/\sqrt{2\pi z}$), so it is the numerically
     preferred primitive in likelihoods and probability densities.
 
-    Three regimes are evaluated in parallel and selected per element:
-    a log-space power series for small/moderate $z$, a Hankel
-    large-argument asymptotic for large $z$ at small/moderate $v$, and
-    the Olver uniform asymptotic for large $v$. Crossover thresholds
-    are calibrated in ``scripts/calibrate_bessel.py``.
+    Three regimes are evaluated in parallel and selected per element
+    via ``jnp.where``:
+
+    - $z < 30$: log-space power series ([DLMF 10.25.2][1]).
+    - $z \ge 30$ and $v \ge 10$: Olver uniform asymptotic for large
+      order ([DLMF 10.41.3][2]).
+    - $z \ge 30$ and $v < 10$: Hankel large-argument asymptotic for
+      fixed order ([DLMF 10.40.1][3]).
+
+    The thresholds (``_SERIES_Z_THRESHOLD = 30.0``,
+    ``_OLVER_V_THRESHOLD = 10.0``) are calibrated empirically against
+    ``scipy.special.ive`` on a $(v, z)$ grid; the procedure lives in
+    ``scripts/calibrate_bessel.py``.
+
+    ### Best regime per cell, with current thresholds overlaid
+
+    ![Best regime map](https://github.com/juehang/numerax/raw/main/scripts/calibration_plots/best_regime.png)
+
+    ### Regime-validity overlay
+
+    Where each regime meets the 1e-7 per-cell accuracy target:
+
+    ![Regime validity overlay](https://github.com/juehang/numerax/raw/main/scripts/calibration_plots/regime_validity.png)
+
+    ### Combined ``ive`` relative error
+
+    The dispatched result, with threshold lines overlaid for direct
+    comparison against the data-derived regions above:
+
+    ![Combined ive relative error](https://github.com/juehang/numerax/raw/main/scripts/calibration_plots/combined.png)
 
     ## Args
     - **v**: real order. Scalar or array.
@@ -210,12 +235,19 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     Scaled Bessel values; broadcast of the inputs.
 
     ## Notes
-    - **Differentiable**: custom JVP w.r.t. ``z`` only. Gradient w.r.t.
-      ``v`` is not implemented and is silently ignored.
+    - **Differentiable**: custom JVP w.r.t. ``z`` only, using the
+      recurrence $I_v'(z) = (I_{v-1}(z) + I_{v+1}(z))/2$
+      ([DLMF 10.29.1][4]). Gradient w.r.t. ``v`` is not implemented and
+      is silently ignored.
     - **JIT/vmap**: regime selection is via ``jnp.where``, no Python
       control flow on data.
     - Accuracy target: ~1e-6 relative vs. ``scipy.special.ive`` for
       ``v >= 0``, ``z > 0``.
+
+    [1]: https://dlmf.nist.gov/10.25.E2
+    [2]: https://dlmf.nist.gov/10.41.E3
+    [3]: https://dlmf.nist.gov/10.40.E1
+    [4]: https://dlmf.nist.gov/10.29.E1
     """
     v = jnp.asarray(v)
     z = jnp.asarray(z)

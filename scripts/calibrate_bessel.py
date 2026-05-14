@@ -129,7 +129,7 @@ def plot_validity_overlay(
     for name, color, mask in zip(
         REGIME_NAMES, REGIME_COLORS, valid_masks, strict=False
     ):
-        rgba = np.zeros(mask.shape + (4,))
+        rgba = np.zeros((*mask.shape, 4))
         rgba[mask] = (*_hex_to_rgb(color), 0.35)
         ax.pcolormesh(
             v_grid, z_grid, np.transpose(rgba, (1, 0, 2)), shading="auto"
@@ -249,7 +249,10 @@ def main():
     v_mesh, z_mesh = np.meshgrid(v_grid, z_grid, indexing="ij")
     v_mesh_j, z_mesh_j = jnp.asarray(v_mesh), jnp.asarray(z_mesh)
 
-    print(f"Grid: {v_mesh.shape[0]} v x {v_mesh.shape[1]} z = {v_mesh.size} points")
+    print(
+        f"Grid: {v_mesh.shape[0]} v x {v_mesh.shape[1]} z "
+        f"= {v_mesh.size} points"
+    )
     print(f"  v in [{v_grid.min():.3f}, {v_grid.max():.1f}]")
     print(f"  z in [{z_grid.min():.3f}, {z_grid.max():.1f}]")
     print(f"  validity threshold: {ACCURACY_THRESHOLD:.0e}")

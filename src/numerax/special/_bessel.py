@@ -278,7 +278,8 @@ def iv(v: ArrayLike, z: ArrayLike) -> ArrayLike:
 
     Computes $I_v(z)$ for real $v$ and real $z \ge 0$. This is a thin
     wrapper over [`ive`][numerax.special.ive]:
-    $$I_v(z) = e^{z} \cdot ive(v, z).$$
+
+    $$I_v(z) = e^{z} \cdot \mathtt{ive}(v, z).$$
 
     For large $z$ ($z \gtrsim 709$ in float64), $\exp(z)$ overflows and
     this function returns ``+inf``. Use ``ive`` directly when working

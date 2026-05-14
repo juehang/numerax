@@ -22,7 +22,7 @@ pip install numerax[sciml]
 
 ### Special Functions
 
-Inverse functions for statistical distributions with differentiability support:
+Differentiable special functions missing from JAX:
 
 ```python
 import jax.numpy as jnp
@@ -31,6 +31,10 @@ import numerax
 # Inverse functions for statistical distributions
 x = numerax.special.gammap_inverse(p, a)  # Gamma quantiles
 y = numerax.special.erfcinv(x)  # Inverse complementary error function
+
+# Modified Bessel functions of the first kind, real order
+i = numerax.special.ive(v, z)  # exp(-z) I_v(z); stable for large z
+i = numerax.special.iv(v, z)   # I_v(z)
 
 # Chi-squared distribution (includes JAX functions + custom ppf)
 x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)

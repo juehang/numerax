@@ -32,7 +32,11 @@ jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from matplotlib.colors import BoundaryNorm, ListedColormap, LogNorm  # noqa: E402
+from matplotlib.colors import (  # noqa: E402
+    BoundaryNorm,
+    ListedColormap,
+    LogNorm,
+)
 from matplotlib.patches import Patch  # noqa: E402
 from scipy.special import ive as scipy_ive  # noqa: E402
 
@@ -79,17 +83,17 @@ def relative_error(numerax_vals, scipy_vals):
     return np.where(abs_scipy > 0, err, np.nan)
 
 
-def evaluate_grid(fn, V, Z):
-    return np.asarray(fn(jnp.asarray(V), jnp.asarray(Z)))
+def evaluate_grid(fn, v_mesh, z_mesh):
+    return np.asarray(fn(jnp.asarray(v_mesh), jnp.asarray(z_mesh)))
 
 
-def plot_heatmap(V, Z, rel_err, title, outpath, boundary_lines=None):
+def plot_heatmap(v_grid, z_grid, rel_err, title, outpath, boundary_lines=None):
     """2D log-log relative-error heatmap on the (v, z) grid."""
     fig, ax = plt.subplots(figsize=(8, 6))
     clipped = np.clip(rel_err, 1e-16, 1.0)
     mesh = ax.pcolormesh(
-        V,
-        Z,
+        v_grid,
+        z_grid,
         clipped.T,
         norm=LogNorm(vmin=1e-15, vmax=1.0),
         cmap="viridis",
@@ -156,15 +160,15 @@ def plot_best_regime(
     """
     errs_filled = np.where(np.isnan(errs_stack), np.inf, errs_stack)
     best_idx = np.argmin(errs_filled, axis=0)
-    best_err = np.take_along_axis(
-        errs_filled, best_idx[None, :, :], axis=0
-    )[0]
+    best_err = np.take_along_axis(errs_filled, best_idx[None, :, :], axis=0)[0]
 
     # 0..2 = regimes; 3 = no regime good enough; 4 = scipy underflow.
+    categorical = np.where(best_err <= ACCURACY_THRESHOLD, best_idx, 3).astype(
+        float
+    )
     categorical = np.where(
-        best_err <= ACCURACY_THRESHOLD, best_idx, 3
-    ).astype(float)
-    categorical = np.where(np.all(np.isnan(errs_stack), axis=0), 4, categorical)
+        np.all(np.isnan(errs_stack), axis=0), 4, categorical
+    )
 
     cmap = ListedColormap([*REGIME_COLORS, "#888888", "#ffffff"])
     bounds = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
@@ -242,22 +246,22 @@ def summarise(name, rel_err, mask_desc, mask):
 
 def main():
     v_grid, z_grid = make_grid()
-    V, Z = np.meshgrid(v_grid, z_grid, indexing="ij")
-    Vj, Zj = jnp.asarray(V), jnp.asarray(Z)
+    v_mesh, z_mesh = np.meshgrid(v_grid, z_grid, indexing="ij")
+    v_mesh_j, z_mesh_j = jnp.asarray(v_mesh), jnp.asarray(z_mesh)
 
-    print(f"Grid: {V.shape[0]} v x {V.shape[1]} z = {V.size} points")
+    print(f"Grid: {v_mesh.shape[0]} v x {v_mesh.shape[1]} z = {v_mesh.size} points")
     print(f"  v in [{v_grid.min():.3f}, {v_grid.max():.1f}]")
     print(f"  z in [{z_grid.min():.3f}, {z_grid.max():.1f}]")
     print(f"  validity threshold: {ACCURACY_THRESHOLD:.0e}")
     print()
 
-    scipy_vals = scipy_ive(V, Z)
+    scipy_vals = scipy_ive(v_mesh, z_mesh)
 
     print("Evaluating regimes...")
-    series_vals = evaluate_grid(_ive_series, Vj, Zj)
-    hankel_vals = evaluate_grid(_ive_hankel, Vj, Zj)
-    olver_vals = evaluate_grid(_ive_olver, Vj, Zj)
-    combined_vals = evaluate_grid(ive, Vj, Zj)
+    series_vals = evaluate_grid(_ive_series, v_mesh_j, z_mesh_j)
+    hankel_vals = evaluate_grid(_ive_hankel, v_mesh_j, z_mesh_j)
+    olver_vals = evaluate_grid(_ive_olver, v_mesh_j, z_mesh_j)
+    combined_vals = evaluate_grid(ive, v_mesh_j, z_mesh_j)
 
     err_series = relative_error(series_vals, scipy_vals)
     err_hankel = relative_error(hankel_vals, scipy_vals)
@@ -273,7 +277,7 @@ def main():
     print(f"Cells where each regime achieves err <= {ACCURACY_THRESHOLD:.0e}:")
     nfinite = np.sum(~np.isnan(err_series))
     for name, m in zip(
-        REGIME_NAMES + ["combined"],
+        [*REGIME_NAMES, "combined"],
         [valid_series, valid_hankel, valid_olver, valid_combined],
         strict=False,
     ):

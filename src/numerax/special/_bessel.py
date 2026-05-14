@@ -66,15 +66,15 @@ def _ive_series(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     log_ratios = log_half_z_sq - log_i - log_v_plus_i
 
     log_r_tail = jnp.cumsum(log_ratios, axis=-1)
-    zero = jnp.zeros(out_shape + (1,), dtype=log_r_tail.dtype)
+    zero = jnp.zeros((*out_shape, 1), dtype=log_r_tail.dtype)
     log_r = jnp.concatenate([zero, log_r_tail], axis=-1)
-    log_S = jax.scipy.special.logsumexp(log_r, axis=-1)
+    log_sum = jax.scipy.special.logsumexp(log_r, axis=-1)
 
     log_ive = (
         -z_safe
         + v * jnp.log(z_safe / 2.0)
         - jax.scipy.special.gammaln(v + 1.0)
-        + log_S
+        + log_sum
     )
     return jnp.exp(log_ive)
 
@@ -100,7 +100,7 @@ def _ive_hankel(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     numerators = four_vsq[..., None] - (2.0 * ks - 1.0) ** 2
     signed_factors = -numerators / (8.0 * ks * z_safe[..., None])
     cum_factors = jnp.cumprod(signed_factors, axis=-1)
-    ones = jnp.ones(out_shape + (1,), dtype=cum_factors.dtype)
+    ones = jnp.ones((*out_shape, 1), dtype=cum_factors.dtype)
     terms = jnp.concatenate([ones, cum_factors], axis=-1)
     series_sum = jnp.sum(terms, axis=-1)
     return series_sum / jnp.sqrt(2.0 * jnp.pi * z_safe)
@@ -130,10 +130,7 @@ def _olver_uk_series(p):
     u3 = (
         p
         * p2
-        * (
-            30375.0
-            + p2 * (-369603.0 + p2 * (765765.0 + p2 * -425425.0))
-        )
+        * (30375.0 + p2 * (-369603.0 + p2 * (765765.0 + p2 * -425425.0)))
         / 414720.0
     )
     u4 = (
@@ -144,11 +141,7 @@ def _olver_uk_series(p):
             + p2
             * (
                 -94121676.0
-                + p2
-                * (
-                    349922430.0
-                    + p2 * (-446185740.0 + p2 * 185910725.0)
-                )
+                + p2 * (349922430.0 + p2 * (-446185740.0 + p2 * 185910725.0))
             )
         )
         / 39813120.0

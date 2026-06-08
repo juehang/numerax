@@ -30,7 +30,7 @@ jobs:
       
       # Install hatch for environment management
       - name: Install Hatch
-        uses: pypa/hatch@install
+        run: pip install hatch
       
       # Run code quality checks using hatch
       - name: Run linting and formatting checks

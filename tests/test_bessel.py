@@ -161,6 +161,18 @@ def test_ive_grad_matches_finite_diff(v, z):
         assert abs(analytic - fd) / abs(fd) < 1e-4
 
 
+@pytest.mark.parametrize("v", [-0.75, -0.5, -0.25])
+@pytest.mark.parametrize("z", [0.3, 1.5, 5.0, 40.0])
+def test_ive_grad_negative_order(v, z):
+    """Gradient w.r.t. z is finite and correct for orders v in (-1, 0),
+    which arise e.g. in the non-central chi^2 density with df < 2."""
+    analytic = float(jax.grad(ive, argnums=1)(v, z))
+    assert jnp.isfinite(jnp.asarray(analytic))
+    h = 1e-6
+    fd = (scipy_ive(v, z + h) - scipy_ive(v, z - h)) / (2 * h)
+    assert abs(analytic - fd) / abs(fd) < 1e-4
+
+
 def test_ive_grad_at_v_zero():
     """At v=0 the JVP uses the I_{-1}=I_1 symmetry; sanity-check
     against scipy's finite difference directly (not against the

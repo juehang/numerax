@@ -275,24 +275,44 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
 
 
 def _ive_jvp(primals, tangents):
-    r"""Custom JVP for ``ive`` using DLMF 10.29.1.
+    r"""Custom JVP for ``ive`` using the DLMF 10.29 recurrences.
 
-    Differentiating $ive(v, z) = e^{-z} I_v(z)$ and using
-    $I_v'(z) = (I_{v-1}(z) + I_{v+1}(z))/2$ gives
-    $$\frac{d}{dz} ive(v, z) = \tfrac{1}{2}(ive(v-1, z) + ive(v+1, z))
-       - ive(v, z).$$
+    Two equivalent derivative recurrences are used, selected by the
+    sign of the order:
 
-    Special case: at $v = 0$, the direct power series for $ive(-1, z)$
-    underflows to zero because $\Gamma(0) = \infty$. Use the
-    integer-order symmetry $I_{-n}(z) = I_n(z)$ to substitute
-    $ive(-1, z) = ive(1, z)$. For non-integer $v \in (0, 1)$ the
-    direct series at $v - 1 \in (-1, 0)$ is well defined.
+    - $v \ge 0$ -- symmetric form ([DLMF 10.29.1][1]),
+      $I_v'(z) = (I_{v-1}(z) + I_{v+1}(z))/2$, giving
+      $$\frac{d}{dz} ive(v, z) = \tfrac{1}{2}(ive(v-1, z) + ive(v+1, z))
+         - ive(v, z).$$
+      This stays finite at $z = 0$. At $v = 0$ the direct power series
+      for $ive(-1, z)$ underflows ($\Gamma(0) = \infty$), so the
+      integer-order symmetry $I_{-1}(z) = I_1(z)$ substitutes
+      $ive(-1, z) = ive(1, z)$.
+
+    - $v < 0$ (reached e.g. via the non-central $\chi^2$ density with
+      $\text{df} < 2$, where $\nu = \text{df}/2 - 1 \in (-1, 0)$) --
+      forward form ([DLMF 10.29.2][2]),
+      $I_v'(z) = I_{v+1}(z) + (v/z) I_v(z)$, giving
+      $$\frac{d}{dz} ive(v, z) = ive(v+1, z) + (v/z - 1)\, ive(v, z).$$
+      This references only order $v + 1 > -1$ and so avoids the
+      $ive(v-1, z)$ term, whose order $< -1$ the log-space series
+      cannot represent (its leading $\Gamma$ factor is negative and the
+      $\log(v - 1 + k)$ recurrence hits a negative argument). Valid for
+      $z > 0$; at $z = 0$ a negative-order $ive$ already diverges, so
+      the singular $v/z$ term is moot.
+
+    The symmetric branch's $v - 1$ neighbour is clamped to a safe order
+    ($\ge -1$) so neither ``jnp.where`` branch ever evaluates to NaN;
+    that keeps the selection safe for reverse-mode differentiation.
 
     ``ive`` is differentiable w.r.t. ``z`` only; there is no derivative
     w.r.t. the order ``v``. The JVP is registered with
     ``symbolic_zeros=True`` so a request to differentiate w.r.t. ``v``
     arrives as a non-symbolic tangent and is rejected with a clear
     ``TypeError`` rather than silently returning a wrong gradient.
+
+    [1]: https://dlmf.nist.gov/10.29.E1
+    [2]: https://dlmf.nist.gov/10.29.E2
     """
     v, z = primals
     v_dot, z_dot = tangents
@@ -305,13 +325,24 @@ def _ive_jvp(primals, tangents):
 
     v = jnp.asarray(v)
     z = jnp.asarray(z)
+    z_safe = jnp.where(z > 0, z, 1.0)
 
     out = ive(v, z)
     out_plus = ive(v + 1.0, z)
-    out_minus_direct = ive(v - 1.0, z)
-    out_minus = jnp.where(v == 0.0, out_plus, out_minus_direct)
 
-    dive_dz = 0.5 * (out_minus + out_plus) - out
+    # Symmetric form (v >= 0). Clamp the v - 1 order to >= -1 so the
+    # log-space series never sees a negative gamma/log argument; for
+    # v < 0 this branch is discarded by the selection below anyway.
+    v_minus = v - 1.0
+    safe_v_minus = jnp.where(v_minus > -1.0, v_minus, jnp.zeros_like(v_minus))
+    out_minus = ive(safe_v_minus, z)
+    out_minus = jnp.where(v == 0.0, out_plus, out_minus)
+    dive_sym = 0.5 * (out_minus + out_plus) - out
+
+    # Forward form (v < 0); references only order v + 1 > -1.
+    dive_fwd = out_plus + (v / z_safe - 1.0) * out
+
+    dive_dz = jnp.where(v >= 0.0, dive_sym, dive_fwd)
     z_dot = jnp.zeros_like(z) if isinstance(z_dot, SymbolicZero) else z_dot
     return out, dive_dz * z_dot
 

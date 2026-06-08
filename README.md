@@ -3,7 +3,7 @@
 [![tests](https://github.com/juehang/numerax/actions/workflows/test.yml/badge.svg)](https://github.com/juehang/numerax/actions/workflows/test.yml)
 [![Coverage Status](https://coveralls.io/repos/github/juehang/numerax/badge.svg?branch=main)](https://coveralls.io/github/juehang/numerax?branch=main)
 [![docs](https://github.com/juehang/numerax/actions/workflows/docs.yml/badge.svg)](https://juehang.github.io/numerax/)
-[![DOI](https://zenodo.org/badge/1018495069.svg)](https://zenodo.org/badge/latestdoi/1018495069)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17162959.svg)](https://doi.org/10.5281/zenodo.17162959)
 
 Statistical and numerical computation functions for JAX, focusing on tools not available in the main JAX API.
 

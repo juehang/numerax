@@ -106,6 +106,15 @@ def logpdf(
       the underlying [`ive`][numerax.special.ive], which has no
       order-derivative, so differentiating w.r.t. ``df`` raises
       ``TypeError`` rather than returning a silently-wrong value.
+    - **Gradient at** $\text{nc} = 0$: the gradient w.r.t. ``nc`` is
+      correct for every $\text{nc} > 0$, but at *exactly* $\text{nc} = 0$
+      it returns ``0`` rather than the true one-sided score
+      $\tfrac12\!\left(\tfrac{(x-\text{loc})/\text{scale}}{\text{df}}
+      - 1\right)$. $\text{nc} = 0$ is the boundary of the parameter
+      domain (where the derivative is one-sided and the closed form has a
+      removable singularity), so this measure-zero point is not special
+      cased. Differentiate at a small $\text{nc} > 0$ if the score at the
+      null is needed.
     - **Broadcasting**: Supports JAX array broadcasting for all
       parameters.
     - **Accuracy**: inherits the ~1e-6 relative accuracy of ``ive``.
@@ -194,8 +203,9 @@ def pdf(
     ## Notes
 
     - **Differentiable**: w.r.t. ``x``, ``nc``, ``loc``, and ``scale``;
-      differentiating w.r.t. ``df`` raises ``TypeError`` (see
-      [`logpdf`][numerax.stats.ncx2.logpdf]).
+      differentiating w.r.t. ``df`` raises ``TypeError``. The gradient
+      w.r.t. ``nc`` returns ``0`` at exactly ``nc = 0`` (a domain
+      boundary). See [`logpdf`][numerax.stats.ncx2.logpdf] for details.
     - **Accuracy**: inherits the ~1e-6 relative accuracy of ``ive``.
     """
     return jnp.exp(logpdf(x, df, nc, loc, scale))

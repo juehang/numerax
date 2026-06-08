@@ -186,6 +186,16 @@ def test_grad_wrt_loc_scale_finite():
     assert jnp.isfinite(jnp.asarray(g_scale))
 
 
+def test_grad_wrt_nc_at_zero_is_finite_zero():
+    """At exactly nc=0 (a domain boundary) the nc-gradient is finite and
+    returned as 0, while any nc>0 (even tiny) gives the correct score."""
+    g0 = float(jax.grad(ncx2.logpdf, argnums=2)(6.0, 3.0, 0.0))
+    assert g0 == 0.0
+    # Just above the boundary the true score 0.5*(x/df - 1) is recovered.
+    g_eps = float(jax.grad(ncx2.logpdf, argnums=2)(6.0, 3.0, 1e-8))
+    assert abs(g_eps - 0.5 * (6.0 / 3.0 - 1.0)) < 1e-5
+
+
 def test_grad_wrt_df_raises():
     """Differentiating w.r.t. df is unsupported (the underlying ive has
     no order-derivative) and must raise rather than mislead."""

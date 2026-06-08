@@ -217,3 +217,33 @@ def test_iv_grad_via_chain_rule():
     ) * float(jnp.exp(z))
     actual = float(grad_iv(v, z))
     assert abs(actual - expected) / abs(expected) < 1e-10
+
+
+def test_ive_grad_wrt_order_raises():
+    """Differentiating ive w.r.t. the order v is unsupported and must
+    raise (rather than silently returning a wrong gradient)."""
+    with pytest.raises(TypeError):
+        jax.grad(ive, argnums=0)(0.5, 1.5)
+
+
+def test_iv_grad_wrt_order_raises():
+    """The order-derivative guard propagates through iv = ive * exp(z)."""
+    with pytest.raises(TypeError):
+        jax.grad(iv, argnums=0)(0.5, 1.5)
+
+
+def test_ive_grad_wrt_order_raises_when_order_depends_on_input():
+    """Order tangent reaching ive through a composition also raises;
+    differentiating only through z (argnums for the z-feeding input)
+    still works."""
+
+    def order_path(a, z):
+        # a feeds the order argument -> must raise
+        return ive(a / 2.0 - 1.0, z)
+
+    with pytest.raises(TypeError):
+        jax.grad(order_path, argnums=0)(3.0, 1.5)
+
+    # Differentiating the same composition w.r.t. z is fine.
+    g = float(jax.grad(order_path, argnums=1)(3.0, 1.5))
+    assert jnp.isfinite(jnp.asarray(g))

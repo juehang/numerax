@@ -12,6 +12,8 @@ on:
 # Security: restrict permissions for CI jobs
 permissions:
   contents: read
+  checks: write       # Required for Coveralls to post check results
+  id-token: write     # Required for OIDC authentication with Coveralls
 
 jobs:
   test:

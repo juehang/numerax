@@ -22,6 +22,7 @@ Crossover thresholds are calibrated empirically; see
 
 import jax
 import jax.numpy as jnp
+from jax.custom_derivatives import SymbolicZero
 from jaxtyping import ArrayLike
 
 _SERIES_N_TERMS = 75
@@ -237,8 +238,9 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     ## Notes
     - **Differentiable**: custom JVP w.r.t. ``z`` only, using the
       recurrence $I_v'(z) = (I_{v-1}(z) + I_{v+1}(z))/2$
-      ([DLMF 10.29.1][4]). Gradient w.r.t. ``v`` is not implemented and
-      is silently ignored.
+      ([DLMF 10.29.1][4]). Gradient w.r.t. ``v`` is not implemented;
+      attempting to differentiate w.r.t. ``v`` raises ``TypeError``
+      rather than returning a silently-wrong value.
     - **JIT/vmap**: regime selection is via ``jnp.where``, no Python
       control flow on data.
     - Accuracy target: ~1e-6 relative vs. ``scipy.special.ive`` for
@@ -272,7 +274,6 @@ def ive(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     return jnp.where(z_zero, z_zero_val, result)
 
 
-@ive.defjvp
 def _ive_jvp(primals, tangents):
     r"""Custom JVP for ``ive`` using DLMF 10.29.1.
 
@@ -287,11 +288,20 @@ def _ive_jvp(primals, tangents):
     $ive(-1, z) = ive(1, z)$. For non-integer $v \in (0, 1)$ the
     direct series at $v - 1 \in (-1, 0)$ is well defined.
 
-    The ``v`` tangent is silently ignored: ``ive`` is differentiable
-    w.r.t. ``z`` only.
+    ``ive`` is differentiable w.r.t. ``z`` only; there is no derivative
+    w.r.t. the order ``v``. The JVP is registered with
+    ``symbolic_zeros=True`` so a request to differentiate w.r.t. ``v``
+    arrives as a non-symbolic tangent and is rejected with a clear
+    ``TypeError`` rather than silently returning a wrong gradient.
     """
     v, z = primals
-    _, z_dot = tangents
+    v_dot, z_dot = tangents
+
+    if not isinstance(v_dot, SymbolicZero):
+        raise TypeError(
+            "ive is not differentiable w.r.t. the order v; "
+            "differentiate w.r.t. the argument z instead."
+        )
 
     v = jnp.asarray(v)
     z = jnp.asarray(z)
@@ -302,7 +312,11 @@ def _ive_jvp(primals, tangents):
     out_minus = jnp.where(v == 0.0, out_plus, out_minus_direct)
 
     dive_dz = 0.5 * (out_minus + out_plus) - out
+    z_dot = jnp.zeros_like(z) if isinstance(z_dot, SymbolicZero) else z_dot
     return out, dive_dz * z_dot
+
+
+ive.defjvp(_ive_jvp, symbolic_zeros=True)
 
 
 def iv(v: ArrayLike, z: ArrayLike) -> ArrayLike:
@@ -320,6 +334,6 @@ def iv(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     Matches the signature of ``scipy.special.iv``, except that the
     ``out=`` parameter is not supported (JAX arrays are immutable).
     Differentiation w.r.t. ``z`` is provided by the underlying ``ive``
-    custom JVP; w.r.t. ``v`` is not supported.
+    custom JVP; differentiating w.r.t. ``v`` raises ``TypeError``.
     """
     return ive(v, z) * jnp.exp(z)

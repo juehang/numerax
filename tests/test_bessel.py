@@ -194,6 +194,14 @@ def test_ive_grad_finite_at_z_zero():
         assert jnp.isfinite(jnp.asarray(g))
 
 
+def test_ive_grad_at_z_zero_v_one():
+    """At z=0 the only nonzero finite derivative is at v=1, where
+    d/dz ive(1, z)|_0 = 1/2. This pins the z=0 boundary behaviour that
+    the symmetric recurrence provides (a forward v/z form cannot)."""
+    g = float(jax.grad(ive, argnums=1)(1.0, 0.0))
+    assert abs(g - 0.5) < 1e-12
+
+
 @pytest.mark.parametrize(
     ("v", "z"),
     [

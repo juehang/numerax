@@ -34,7 +34,7 @@ y = numerax.special.erfcinv(x)  # Inverse complementary error function
 
 # Modified Bessel functions of the first kind, real order
 i = numerax.special.ive(v, z)  # exp(-z) I_v(z); stable for large z
-i = numerax.special.iv(v, z)   # I_v(z)
+i = numerax.special.iv(v, z)  # I_v(z)
 
 # Chi-squared distribution (includes JAX functions + custom ppf)
 x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)
@@ -55,18 +55,25 @@ Efficient profile likelihood computation for statistical inference with nuisance
 import jax.numpy as jnp
 import numerax
 
+
 # Example: Normal distribution with mean inference, variance profiling
 def normal_llh(params, data):
     mu, log_sigma = params
     sigma = jnp.exp(log_sigma)
-    return jnp.sum(-0.5 * jnp.log(2 * jnp.pi) - log_sigma 
-                   - 0.5 * ((data - mu) / sigma) ** 2)
+    return jnp.sum(
+        -0.5 * jnp.log(2 * jnp.pi)
+        - log_sigma
+        - 0.5 * ((data - mu) / sigma) ** 2
+    )
+
 
 # Profile over log_sigma, infer mu
 is_nuisance = [False, True]  # mu=inference, log_sigma=nuisance
 
+
 def get_initial_log_sigma(data):
     return jnp.array([jnp.log(jnp.std(data))])
+
 
 profile_llh = numerax.stats.make_profile_llh(
     normal_llh, is_nuisance, get_initial_log_sigma

@@ -125,7 +125,7 @@ tree_summary(model)
 - Decorators for preserving function metadata when using JAX's advanced features
 
 ## Acknowledgements
-This work is supported by the Department of Energy AI4HEP program.
+This work is supported by the Department of Energy AI4HEP program and the National Institute of Education, Nanyang Technological University, Singapore.
 
 ## Citation
 If you use `numerax` in your research, please cite it using the citation information from Zenodo (click the DOI badge at the top of the README) to ensure you get the correct DOI for the version you used.

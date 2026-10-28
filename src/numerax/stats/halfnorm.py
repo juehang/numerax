@@ -5,21 +5,44 @@ This module provides the density, distribution, and quantile functions of
 the half-normal distribution (the distribution of $|Z|$ for a standard
 normal $Z$), which JAX does not provide. The signatures mirror
 ``scipy.stats.halfnorm`` (including ``loc`` and ``scale``), each function is
-evaluated in a form that stays accurate in the tails, and all functions are
-compatible with JAX transformations (JIT, grad, vmap).
+evaluated in a form that stays accurate in the tails in both float32 and
+float64, and all functions are compatible with JAX transformations (JIT,
+grad, vmap).
 """
+
+import math
 
 import jax.numpy as jnp
 from jax.scipy.special import erf, erfc, erfinv, ndtri
 from jaxtyping import ArrayLike
 
-_SQRT2 = jnp.sqrt(2.0)
+# Python floats (not jnp arrays) so they adopt the dtype of the inputs at
+# call time, whatever the x64 setting was when this module was imported.
+_SQRT2 = math.sqrt(2.0)
+_HALF_LOG_2_OVER_PI = 0.5 * math.log(2.0 / math.pi)
 
-# logsf switches from log(erfc) to the asymptotic Mills-ratio expansion
-# here, comfortably before erfc(y / sqrt(2)) leaves the normal range.
-_LOGSF_TAIL = 35.0
-# (-1)^k (2k-1)!! for k = 1..6; the next term is < 1e-16 at y = 35.
-_MILLS_COEFFS = (-1.0, 3.0, -15.0, 105.0, -945.0, 10395.0)
+# (-1)^k (2k-1)!! for k = 1..10, the asymptotic Mills-ratio expansion used
+# by logsf in the upper tail.
+_MILLS_COEFFS = (
+    -1.0,
+    3.0,
+    -15.0,
+    105.0,
+    -945.0,
+    10395.0,
+    -135135.0,
+    2027025.0,
+    -34459425.0,
+    654729075.0,
+)
+
+
+def _logsf_tail_start(dtype):
+    # Switch to the expansion before erfc(y / sqrt(2))**2 (formed by the
+    # second derivative of log(erfc)) underflows. The truncation error at
+    # the switch is ~3e-19 at y = 20 and ~2e-10 at y = 8, far below the
+    # respective machine epsilons.
+    return 20.0 if jnp.finfo(dtype).bits >= 64 else 8.0
 
 
 def _standardize(x, loc, scale):
@@ -64,14 +87,13 @@ def logpdf(
     \tfrac{x - \text{loc}}{\text{scale}}\right)$.
 
     Every function in this module evaluates whichever of the equivalent
-    forms is accurate in the relevant regime: ``cdf`` uses ``erf`` (exact
-    relative accuracy near the origin) and ``sf`` uses ``erfc`` (exact
-    relative accuracy in the upper tail); ``logsf`` switches to an
-    asymptotic expansion so it stays accurate far past where ``erfc``
-    underflows; ``ppf`` switches
-    between ``erfinv`` and ``ndtri`` at $q = 1/2$ so that neither tiny
-    $q$ nor $q$ close to one loses precision; and ``isf`` evaluates
-    $-\Phi^{-1}(q/2)$ directly rather than forming $1 - q$.
+    forms is accurate in the relevant regime: ``cdf`` uses ``erf`` (full
+    relative accuracy near the origin) and ``sf`` uses ``erfc`` (relative
+    accuracy in the upper tail); ``logsf`` switches to an asymptotic
+    expansion so it stays accurate far past where ``erfc`` underflows;
+    ``ppf`` switches between ``erfinv`` and ``ndtri`` at $q = 1/2$ so that
+    neither tiny $q$ nor $q$ close to one loses precision; and ``isf``
+    evaluates $-\Phi^{-1}(q/2)$ directly rather than forming $1 - q$.
 
     ## Args
 
@@ -107,17 +129,23 @@ def logpdf(
 
     - **Differentiable**: w.r.t. ``x``, ``loc``, and ``scale`` (and ``q``
       for ``ppf``/``isf``). Branch selections use safe substitutes so
-      gradients stay NaN-free at interior points.
+      gradients (and second derivatives) stay NaN-free at finite points.
+      At $x = \text{loc}$, ``cdf``, ``sf`` and ``logsf`` return the
+      one-sided (right) derivative.
+    - **Precision**: results follow the input dtype. Accuracy is close to
+      machine precision in both float32 and float64; far in the upper
+      tail ``sf`` and ``pdf`` are limited by the conditioning of
+      $e^{-y^2/2}$, about $y^2$ ulps.
     - **Broadcasting**: Supports JAX array broadcasting for all
       parameters.
     - **Support boundary**: for $x < \text{loc}$ the density is zero
       (``logpdf`` returns ``-inf``), matching ``scipy.stats.halfnorm``.
       $x = \text{loc}$ is in the support, where the density is
-      $\sqrt{2/\pi}/\text{scale}$.
+      $\sqrt{2/\pi}/\text{scale}$. ``nan`` inputs propagate to ``nan``.
     """
     y, scale = _standardize(x, loc, scale)
-    log_std = 0.5 * jnp.log(2.0 / jnp.pi) - 0.5 * y**2
-    return jnp.where(y >= 0, log_std - jnp.log(scale), -jnp.inf)
+    log_std = _HALF_LOG_2_OVER_PI - 0.5 * y**2
+    return jnp.where(y < 0, -jnp.inf, log_std - jnp.log(scale))
 
 
 def pdf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
@@ -167,7 +195,7 @@ def cdf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
     Cumulative probabilities. Shape follows JAX broadcasting rules.
     """
     y, _ = _standardize(x, loc, scale)
-    return jnp.where(y >= 0, erf(y / _SQRT2), 0.0)
+    return jnp.where(y < 0, 0.0, erf(y / _SQRT2))
 
 
 def logcdf(
@@ -195,15 +223,19 @@ def logcdf(
     Log cumulative probabilities. Shape follows JAX broadcasting rules.
     """
     y, _ = _standardize(x, loc, scale)
-    # Safe substitute keeps log(erf(0)) = -inf (and its gradient) out of
-    # the unselected branch, so reverse-mode gradients stay NaN-free.
-    safe_y = jnp.where(y > 0, y, 1.0)
+    small = y < 1.0
+    # Safe substitutes keep each branch finite where it is not selected:
+    # log(erf(0)) = -inf at the support edge, and log1p(-erfc) hits
+    # log1p(-1) = -inf for tiny y. Either would leak a NaN gradient
+    # through the selections.
+    y_lo = jnp.where(small & (y > 0), y, 0.5)
+    y_hi = jnp.where(small, 2.0, y)
     log_std = jnp.where(
-        safe_y < 1.0,
-        jnp.log(erf(safe_y / _SQRT2)),
-        jnp.log1p(-erfc(safe_y / _SQRT2)),
+        small,
+        jnp.log(erf(y_lo / _SQRT2)),
+        jnp.log1p(-erfc(y_hi / _SQRT2)),
     )
-    return jnp.where(y > 0, log_std, -jnp.inf)
+    return jnp.where(y <= 0, -jnp.inf, log_std)
 
 
 def sf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
@@ -212,7 +244,9 @@ def sf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
 
     Computes $\text{erfc}(y/\sqrt{2})$ for
     $y = (x - \text{loc})/\text{scale} \ge 0$, and one below the
-    support, with full relative accuracy in the upper tail. See
+    support. This keeps relative accuracy in the upper tail (rather than
+    computing $1 - \text{cdf}$), up to the inherent conditioning of about
+    $y^2$ ulps for large $y$. See
     [`logpdf`][numerax.stats.halfnorm.logpdf] for the mathematical
     background.
 
@@ -228,7 +262,7 @@ def sf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
     Survival probabilities. Shape follows JAX broadcasting rules.
     """
     y, _ = _standardize(x, loc, scale)
-    return jnp.where(y >= 0, erfc(y / _SQRT2), 1.0)
+    return jnp.where(y < 0, 1.0, erfc(y / _SQRT2))
 
 
 def logsf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
@@ -237,15 +271,17 @@ def logsf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
 
     Evaluates $\log S(y)$ for $y = (x - \text{loc})/\text{scale}$ in
     three regimes: $\text{log1p}(-\text{erf}(y/\sqrt{2}))$ for $y < 1$,
-    $\log \text{erfc}(y/\sqrt{2})$ for $1 \le y < 35$, and beyond that
-    (where ``erfc`` approaches underflow) the asymptotic expansion
+    $\log \text{erfc}(y/\sqrt{2})$ for $1 \le y < y_t$, and beyond that
+    the asymptotic expansion
 
     $$\log S(y) = \tfrac12 \log\tfrac{2}{\pi} - \tfrac{y^2}{2} - \log y
-    + \log\!\left(1 + \sum_{k=1}^{6} \frac{(-1)^k (2k-1)!!}{y^{2k}}
-    \right),$$
+    + \log\!\left(1 + \sum_{k=1}^{10} \frac{(-1)^k (2k-1)!!}{y^{2k}}
+    \right).$$
 
-    whose truncation error is below $10^{-16}$ there. Returns zero for
-    $y \le 0$. See [`logpdf`][numerax.stats.halfnorm.logpdf] for the
+    The switch $y_t$ is 20 in float64 and 8 in float32, before ``erfc``
+    (or the ``erfc**2`` formed by second derivatives) underflows; the
+    truncation error there is far below machine epsilon. Returns zero
+    for $y \le 0$. See [`logpdf`][numerax.stats.halfnorm.logpdf] for the
     mathematical background.
 
     This is more accurate than $\log 2 + $ ``jax.scipy.special.log_ndtr``
@@ -264,24 +300,22 @@ def logsf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
     Log survival probabilities. Shape follows JAX broadcasting rules.
     """
     y, _ = _standardize(x, loc, scale)
+    tail_start = _logsf_tail_start(y.dtype)
     small = y < 1.0
-    tail = y >= _LOGSF_TAIL
+    tail = y >= tail_start
     # Safe substitutes keep each branch finite where it is not selected
     # (e.g. log1p(-erf) hits log1p(-1) = -inf for large y), so no NaN
     # gradient leaks through the selections.
     y_lo = jnp.where(small, y, 0.5)
     y_mid = jnp.where(small | tail, 2.0, y)
-    y_hi = jnp.where(tail, y, 2.0 * _LOGSF_TAIL)
+    y_hi = jnp.where(tail, y, 2.0 * tail_start)
 
     inv_y2 = 1.0 / y_hi**2
     series = 0.0
     for c in reversed(_MILLS_COEFFS):
         series = (series + c) * inv_y2
     log_tail = (
-        0.5 * jnp.log(2.0 / jnp.pi)
-        - 0.5 * y_hi**2
-        - jnp.log(y_hi)
-        + jnp.log1p(series)
+        _HALF_LOG_2_OVER_PI - 0.5 * y_hi**2 - jnp.log(y_hi) + jnp.log1p(series)
     )
 
     log_std = jnp.where(
@@ -289,7 +323,7 @@ def logsf(x: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:
         jnp.log1p(-erf(y_lo / _SQRT2)),
         jnp.where(tail, log_tail, jnp.log(erfc(y_mid / _SQRT2))),
     )
-    return jnp.where(y >= 0, log_std, 0.0)
+    return jnp.where(y < 0, 0.0, log_std)
 
 
 def ppf(q: ArrayLike, loc: ArrayLike = 0, scale: ArrayLike = 1) -> ArrayLike:

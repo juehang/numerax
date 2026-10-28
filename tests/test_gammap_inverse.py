@@ -9,6 +9,13 @@ from jax.scipy import special
 
 from numerax.special import gammap_inverse
 
+from ._precision import cast
+
+# Known bug (float32 cases fail): TINY/EPS in _gamma.py are fixed at
+# import time as float64 (x64 is on), so jnp.fmax(x, TINY) promotes the
+# float32 Halley iterate and lax.while_loop raises a carry-dtype
+# TypeError. chi2.ppf goes through gammap_inverse and fails the same way.
+
 
 @pytest.mark.parametrize(
     "p,a",
@@ -20,9 +27,12 @@ from numerax.special import gammap_inverse
         (0.95, 3.0),
     ],
 )
-def test_gamma_inverse_correctness(p, a):
+def test_gamma_inverse_correctness(p, a, dtype):
     """Test that gammap_inverse correctly inverts gammainc."""
-    result = special.gammainc(a, gammap_inverse(p, a))
+    p, a = cast(p, dtype), cast(a, dtype)
+    x = gammap_inverse(p, a)
+    assert x.dtype == dtype
+    result = special.gammainc(a, x)
     assert jnp.abs(result - p) < 1e-6
 
 
@@ -36,8 +46,9 @@ def test_gamma_inverse_correctness(p, a):
         (0.9, 2.5),
     ],
 )
-def test_gamma_inverse_gradients(p, a):
+def test_gamma_inverse_gradients(p, a, dtype):
     """Test that gradients of gammap_inverse are computed correctly."""
+    p, a = cast(p, dtype), cast(a, dtype)
     # Compute x such that gammainc(a, x) = p
     x = gammap_inverse(p, a)
 
@@ -46,5 +57,6 @@ def test_gamma_inverse_gradients(p, a):
 
     # Autodiff gradient
     auto_grad = jax.grad(gammap_inverse)(p, a)
+    assert auto_grad.dtype == dtype
 
     assert jnp.abs(manual_grad - auto_grad) < 1e-6

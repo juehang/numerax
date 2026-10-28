@@ -5,8 +5,10 @@ import jax.numpy as jnp
 
 from numerax.stats import make_profile_llh
 
+from ._precision import cast
 
-def test_gaussian_profile_analytical_validation():
+
+def test_gaussian_profile_analytical_validation(dtype):
     r"""Test profile likelihood against analytical Gaussian MLE solution.
 
     For Gaussian data with fixed $\mu$, the MLE of $\sigma$ is:
@@ -22,7 +24,7 @@ def test_gaussian_profile_analytical_validation():
     true_sigma = 1.5
     n_samples = 50
 
-    data = jax.random.normal(key, (n_samples,)) * true_sigma + true_mu
+    data = jax.random.normal(key, (n_samples,), dtype) * true_sigma + true_mu
 
     # Define normal log likelihood function
     def normal_llh(params, data):
@@ -49,8 +51,9 @@ def test_gaussian_profile_analytical_validation():
     # Test at a fixed mu value
     test_mu = 1.8
     llh_val, opt_log_sigma, diff, n_iter = profile_llh(
-        jnp.array([test_mu]), data
+        cast([test_mu], dtype), data
     )
+    assert llh_val.dtype == opt_log_sigma.dtype == dtype
 
     # Extract optimized sigma
     sigma_opt = jnp.exp(opt_log_sigma[0])
@@ -75,7 +78,7 @@ def test_gaussian_profile_analytical_validation():
     assert llh_val < 0, "Log likelihood should be negative"
 
 
-def test_gaussian_profile_at_true_mean():
+def test_gaussian_profile_at_true_mean(dtype):
     """Test profile likelihood when mu equals the true data-generating mean."""
     key = jax.random.PRNGKey(123)
 
@@ -84,7 +87,7 @@ def test_gaussian_profile_at_true_mean():
     true_sigma = 0.8
     n_samples = 30
 
-    data = jax.random.normal(key, (n_samples,)) * true_sigma + true_mu
+    data = jax.random.normal(key, (n_samples,), dtype) * true_sigma + true_mu
 
     def normal_llh(params, data):
         mu, log_sigma = params
@@ -106,7 +109,10 @@ def test_gaussian_profile_at_true_mean():
 
     # Test at sample mean (should be close to optimal)
     sample_mean = jnp.mean(data)
-    llh_val, opt_log_sigma, _, _ = profile_llh(jnp.array([sample_mean]), data)
+    llh_val, opt_log_sigma, _, _ = profile_llh(
+        jnp.array([sample_mean], dtype), data
+    )
+    assert llh_val.dtype == opt_log_sigma.dtype == dtype
 
     sigma_opt = jnp.exp(opt_log_sigma[0])
     sigma_analytical = jnp.sqrt(jnp.mean((data - sample_mean) ** 2))

@@ -38,6 +38,9 @@ i = numerax.special.iv(v, z)   # I_v(z)
 
 # Chi-squared distribution (includes JAX functions + custom ppf)
 x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)
+
+# Half-normal distribution (pdf, cdf, sf, ppf, isf and their logs)
+x = numerax.stats.halfnorm.ppf(q, loc=0, scale=1)
 ```
 
 **Key features:**

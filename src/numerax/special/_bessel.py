@@ -174,9 +174,16 @@ def _ive_olver(v: ArrayLike, z: ArrayLike) -> ArrayLike:
     one_plus_x2 = 1.0 + x * x
     sqrt_one_plus_x2 = jnp.sqrt(one_plus_x2)
     p = 1.0 / sqrt_one_plus_x2
-    eta = sqrt_one_plus_x2 + jnp.log(x / (1.0 + sqrt_one_plus_x2))
 
-    prefactor = jnp.exp(v_safe * eta - z_safe) / (
+    # v * eta - z, evaluated without cancellation. Forming v * eta and
+    # subtracting z loses ~eps * z absolutely when z >> v (the two nearly
+    # cancel). Instead use sqrt(1+x^2) - x = 1 / (sqrt(1+x^2) + x) and
+    # log(x / (1 + sqrt(1+x^2))) = -log1p((1 + d) / x) with d that same
+    # difference, so v * eta - z = v * d - v * log1p((1 + d) / x).
+    d = 1.0 / (sqrt_one_plus_x2 + x)
+    exponent = v_safe * (d - jnp.log1p((1.0 + d) / x))
+
+    prefactor = jnp.exp(exponent) / (
         jnp.sqrt(2.0 * jnp.pi * v_safe) * one_plus_x2**0.25
     )
 

@@ -138,12 +138,21 @@ def make_profile_llh(
         solver = optimizer
         initial_nuisance = get_initial_nuisance(*args)
         opt_state = solver.init(initial_nuisance)
+        # The optimizer works in the nuisance parameters' dtype, so the
+        # objective and the loop's convergence state must match it.
+        dtype = initial_nuisance.dtype
 
         def objective(nuisance_params):
             # Reconstruct full parameter vector
-            full_params = jnp.zeros(len(nuisance_mask))
-            full_params = full_params.at[inference_mask].set(inference_values)
-            full_params = full_params.at[nuisance_mask].set(nuisance_params)
+            full_params = jnp.zeros(len(nuisance_mask), dtype)
+            full_params = full_params.at[inference_mask].set(
+                jnp.asarray(inference_values, dtype)
+            )
+            # optax's line search can hand back float64 trial points for
+            # float32 parameters under x64, so cast at the boundary too.
+            full_params = full_params.at[nuisance_mask].set(
+                jnp.asarray(nuisance_params, dtype)
+            )
             return -llh_fn(full_params, *args)
 
         value_and_grad = optax.value_and_grad_from_state(objective)
@@ -166,7 +175,13 @@ def make_profile_llh(
         params, value, opt_state, diff, n = jax.lax.while_loop(
             lambda var: jnp.abs(var[-2]) > jnp.abs(var[1] * tol),
             profile_llh_loopfun,
-            (initial_nuisance, initial_value, opt_state, initial_diff, 0),
+            (
+                initial_nuisance,
+                jnp.asarray(initial_value, dtype),
+                opt_state,
+                jnp.asarray(initial_diff, dtype),
+                0,
+            ),
         )
 
         return -value, params, diff, n

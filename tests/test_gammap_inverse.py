@@ -11,11 +11,6 @@ from numerax.special import gammap_inverse
 
 from ._precision import cast
 
-# Known bug (float32 cases fail): TINY/EPS in _gamma.py are fixed at
-# import time as float64 (x64 is on), so jnp.fmax(x, TINY) promotes the
-# float32 Halley iterate and lax.while_loop raises a carry-dtype
-# TypeError. chi2.ppf goes through gammap_inverse and fails the same way.
-
 
 @pytest.mark.parametrize(
     "p,a",

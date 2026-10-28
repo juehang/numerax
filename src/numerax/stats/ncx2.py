@@ -10,10 +10,15 @@ functions are compatible with JAX transformations (JIT, grad, vmap).
 """
 
 import jax.numpy as jnp
+from jax.scipy.special import gammaln
 from jax.scipy.stats.chi2 import logpdf as _chi2_logpdf
 from jaxtyping import ArrayLike
 
 from numerax.special import ive
+
+# Terms of the small-argument Bessel series used for (z/2)^2 < 1; the
+# truncation error there is < 1e-22 relative for every df > 0.
+_SMALL_Z_N_TERMS = 15
 
 
 def logpdf(
@@ -61,6 +66,16 @@ def logpdf(
     $$f = \tfrac12\, e^{-\frac12(\sqrt{x} - \sqrt{\lambda})^2}
         \left(\tfrac{x}{\lambda}\right)^{\nu/2}
         \mathtt{ive}\!\left(\nu, \sqrt{\lambda x}\right).$$
+
+    For small $u = \lambda x / 4 < 1$ the factors $(x/\lambda)^{\nu/2}$ and
+    $I_\nu$ each vary like $\lambda^{\mp\nu/2}$ and would cancel
+    numerically (badly so in the gradient w.r.t. $\lambda$ as
+    $\lambda \to 0$). There the power series of $I_\nu$ is used instead,
+    in which that cancellation is exact:
+
+    $$\log f = -\log 2 - \tfrac{x + \lambda}{2}
+        + \nu \log\tfrac{x}{2} - \log\Gamma(\nu + 1)
+        + \log \sum_{k \ge 0} \frac{u^k}{k!\,(\nu + 1)_k}.$$
 
     The location-scale family follows the usual convention
     $f(x; \text{loc}, \text{scale}) =
@@ -117,7 +132,9 @@ def logpdf(
       null is needed.
     - **Broadcasting**: Supports JAX array broadcasting for all
       parameters.
-    - **Accuracy**: inherits the ~1e-6 relative accuracy of ``ive``.
+    - **Accuracy**: inherits the ~1e-6 relative accuracy of ``ive``
+      for $\lambda x \ge 4$; below that the series form is accurate to
+      working precision.
     - **Support boundary**: for $x \le \text{loc}$ the density is taken
       to be zero (``logpdf`` returns ``-inf``), matching
       ``scipy.stats.ncx2.pdf``. At the single point $x = \text{loc}$ the
@@ -139,13 +156,36 @@ def logpdf(
     safe_nc = jnp.where(nc > 0, nc, 1.0)
     safe_y = jnp.where(y > 0, y, 1.0)
 
-    z = jnp.sqrt(safe_nc * safe_y)
-    log_std = (
+    # Small-argument branch, u = (z/2)^2 < 1: power series of I_nu, with
+    # the (y/nc)^(nu/2) and (z/2)^nu factors combined analytically.
+    u = safe_nc * safe_y / 4.0
+    small = u < 1.0
+    u_small = jnp.where(small, u, 0.5)
+    term = 1.0
+    series = 1.0
+    for k in range(1, _SMALL_Z_N_TERMS + 1):
+        term = term * u_small / (k * (nu + k))
+        series = series + term
+    log_small = (
         -jnp.log(2.0)
-        - 0.5 * (jnp.sqrt(safe_y) - jnp.sqrt(safe_nc)) ** 2
-        + (nu / 2.0) * jnp.log(safe_y / safe_nc)
+        - 0.5 * (safe_y + safe_nc)
+        + nu * jnp.log(safe_y / 2.0)
+        - gammaln(nu + 1.0)
+        + jnp.log(series)
+    )
+
+    # Bessel branch, u >= 1. Its safe substitute (u = 2) keeps the 1/nc
+    # sensitivities of the unselected branch out of the gradient.
+    bessel_nc = jnp.where(small, 8.0 / safe_y, safe_nc)
+    z = jnp.sqrt(bessel_nc * safe_y)
+    log_bessel = (
+        -jnp.log(2.0)
+        - 0.5 * (jnp.sqrt(safe_y) - jnp.sqrt(bessel_nc)) ** 2
+        + (nu / 2.0) * jnp.log(safe_y / bessel_nc)
         + jnp.log(ive(nu, z))
     )
+
+    log_std = jnp.where(small, log_small, log_bessel)
     # x <= loc has zero density on the non-central branch.
     general = jnp.where(y > 0, log_std - jnp.log(scale), -jnp.inf)
 

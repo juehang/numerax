@@ -12,14 +12,8 @@ from numerax.special import iv, ive
 from ._precision import cast, check
 
 # Relative accuracy of ive: ~1e-6 by design in float64; in float32 the
-# error away from the Olver regime is up to ~6e-6 (~50 ulps).
+# error is up to ~6e-6 (~50 ulps).
 _IVE_RTOL = {jnp.float32: 1e-5, jnp.float64: 1e-6}
-
-# Known bug (float32 cases fail): the Olver branch (v >= 10) evaluates
-# exp(v * eta - z), whose exponent cancels catastrophically for z >> v
-# (an absolute error of ~eps * z), costing up to ~3e-4 relative
-# accuracy in float32 for v >= 10 and z >= ~100-1000. The gradient
-# inherits it through ive_{v+1}, so v = 9.99 is affected there too.
 
 # Reference v values: a mix of zero, simple half-integers (Rice /
 # non-central chi^2 use case), integers, and arbitrary irrationals.

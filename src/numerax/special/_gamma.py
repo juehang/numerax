@@ -3,10 +3,13 @@ import jax.numpy as jnp
 import jax.scipy.special as special
 from jaxtyping import ArrayLike
 
-# Global constants for numerical stability - adapt to JAX precision setting
-_DTYPE = jnp.float64 if jax.config.jax_enable_x64 else jnp.float32
-TINY = jnp.finfo(_DTYPE).smallest_normal  # For preventing underflow
-EPS = jnp.finfo(_DTYPE).eps  # For convergence tolerance (machine epsilon)
+
+def _tiny_and_eps(dtype):
+    """Smallest normal number (for preventing underflow) and machine
+    epsilon (for the convergence tolerance) of ``dtype``, as Python floats
+    so they adopt the dtype of the arrays they meet."""
+    info = jnp.finfo(dtype)
+    return float(info.smallest_normal), float(info.eps)
 
 
 @jax.custom_jvp
@@ -139,12 +142,15 @@ def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
     d2f_dx2 = jax.grad(df_dx)
 
     x = initial_guess(p, a)
+    # Precision constants follow the dtype being solved in, not the x64
+    # setting at import time.
+    tiny, eps = _tiny_and_eps(x.dtype)
 
     # Use while_loop for dynamic convergence
     def cond_fn(state):
         x, step, iteration = state
         # Continue while step is large and we haven't exceeded max iterations
-        return (jnp.abs(step) > EPS * jnp.abs(x)) & (iteration < 12)
+        return (jnp.abs(step) > eps * jnp.abs(x)) & (iteration < 12)
 
     def body_fn(state):
         x, _, iteration = state
@@ -159,8 +165,8 @@ def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
 
         # Avoid division by zero and ensure step is reasonable
         denominator = jnp.where(
-            jnp.abs(denominator) < TINY,
-            jnp.sign(denominator) * TINY,
+            jnp.abs(denominator) < tiny,
+            jnp.sign(denominator) * tiny,
             denominator,
         )
 
@@ -168,12 +174,12 @@ def gammap_inverse(p: ArrayLike, a: float) -> ArrayLike:
         x_new = x - step
 
         # Ensure x stays positive
-        x_new = jnp.fmax(x_new, TINY)
+        x_new = jnp.fmax(x_new, tiny)
 
         return (x_new, step, iteration + 1)
 
     # Initial state: (x, step, iteration)
-    initial_state = (x, jnp.inf, 0)
+    initial_state = (x, jnp.full_like(x, jnp.inf), 0)
     final_state = jax.lax.while_loop(cond_fn, body_fn, initial_state)
     x = final_state[0]
 
@@ -199,11 +205,12 @@ def gammap_inverse_jvp(primals, tangents):
         return special.gammainc(a, x_val)
 
     dgammainc_dx = jax.grad(gammainc_x)(x)
+    tiny, _ = _tiny_and_eps(dgammainc_dx.dtype)
 
     # Avoid division by zero
     dgammainc_dx = jnp.where(
-        jnp.abs(dgammainc_dx) < TINY,
-        jnp.sign(dgammainc_dx) * TINY,
+        jnp.abs(dgammainc_dx) < tiny,
+        jnp.sign(dgammainc_dx) * tiny,
         dgammainc_dx,
     )
 

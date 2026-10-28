@@ -11,9 +11,6 @@ from numerax.stats import chi2
 
 from ._precision import cast
 
-# float32 ppf cases fail: see the known-bug note in
-# test_gammap_inverse.py.
-
 
 @pytest.mark.parametrize(
     "q,df",

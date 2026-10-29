@@ -163,8 +163,6 @@ def test_ive_grad_matches_finite_diff(v, z, dtype):
     # also allowed an error of the float32 ive tolerance times |ive|.
     if abs(fd) < 1e-20:
         assert abs(analytic) < 1e-12
-    elif abs(fd) < float(jnp.finfo(dtype).tiny):
-        assert abs(analytic) < float(jnp.finfo(dtype).tiny)
     else:
         tol = 1e-4 * abs(fd)
         if dtype == jnp.float32:

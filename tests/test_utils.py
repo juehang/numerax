@@ -352,6 +352,33 @@ def test_tree_summary_list_structure(capsys):
     assert count == 13  # 9 + 4
 
 
+def test_tree_summary_hide_empty(capsys):
+    """Test hide_empty controls display of zero-parameter nodes."""
+    # Primitives like str/int are non-leaf nodes without __dict__
+    model = {
+        "weights": jnp.ones((2, 2)),
+        "empty": jnp.array([]),
+        "config": {"name": "test", "version": 1},
+    }
+
+    count = tree_summary(model, verbose=True, hide_empty=True)
+    output = capsys.readouterr().out
+    assert count == 4
+    assert "weights" in output
+    assert "empty" not in output
+    assert "config" not in output
+    assert "version" not in output
+
+    count = tree_summary(model, verbose=True, hide_empty=False)
+    output = capsys.readouterr().out
+    assert count == 4
+    assert "weights" in output
+    assert "empty" in output
+    assert "config" in output
+    assert "name" in output
+    assert "version" in output
+
+
 def test_pathological_object_normal_attribute():
     """Test PathologicalObject blocking __class__ access."""
     obj = _PathologicalObject()

@@ -41,6 +41,9 @@ x = numerax.stats.chi2.ppf(q, df, loc=0, scale=1)
 
 # Half-normal distribution (pdf, cdf, sf, ppf, isf and their logs)
 x = numerax.stats.halfnorm.ppf(q, loc=0, scale=1)
+
+# Split-normal distribution: separate scales below/above the mode
+x = numerax.stats.splitnorm.ppf(q, loc=0, scale_left=1, scale_right=2)
 ```
 
 **Key features:**
